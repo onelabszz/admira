@@ -2,14 +2,16 @@ import {
   Menu, X, Building2, Home, Inbox, Send, Users, Settings,
   SquareCheck, ChartColumn, Plus, PenLine, Trash2, Printer,
   MessageSquare, Download, Upload, Check, TriangleAlert, Save, RotateCcw,
-  CircleCheck, CircleX, Info
+  CircleCheck, CircleX, Info,
+  UserCog, GraduationCap, FileSpreadsheet
 } from 'https://cdn.jsdelivr.net/npm/lucide@0.451.0/dist/esm/lucide.js';
 
 const REGISTRY = {
   Menu, X, Building2, Home, Inbox, Send, Users, Settings,
   SquareCheck, ChartColumn, Plus, PenLine, Trash2, Printer,
   MessageSquare, Download, Upload, Check, TriangleAlert, Save, RotateCcw,
-  CircleCheck, CircleX, Info
+  CircleCheck, CircleX, Info,
+  UserCog, GraduationCap, FileSpreadsheet
 };
 
 /**

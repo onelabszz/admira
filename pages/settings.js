@@ -107,7 +107,7 @@ export async function renderSettings(main) {
   // Backup
   main.querySelector('#backup').addEventListener('click', async () => {
     const zip = new JSZip();
-    const tables = ['settings', 'letters', 'letter_numbering', 'letter_templates', 'dispositions', 'meetings', 'tasks'];
+    const tables = ['settings', 'letters', 'letter_numbering', 'letter_templates', 'dispositions', 'meetings', 'tasks', 'staff', 'students'];
     const data = {};
     for (const t of tables) data[t] = await db.table(t).toArray();
 
@@ -147,7 +147,7 @@ export async function renderSettings(main) {
     if (!dataFile) { toast.error('File backup tidak valid.'); return; }
     const data = JSON.parse(await dataFile.async('string'));
 
-    for (const t of ['letters', 'letter_numbering', 'letter_templates', 'dispositions', 'meetings', 'tasks', 'attachments']) {
+    for (const t of ['letters', 'letter_numbering', 'letter_templates', 'dispositions', 'meetings', 'tasks', 'attachments', 'staff', 'students']) {
       await db.table(t).clear();
     }
 
@@ -158,6 +158,8 @@ export async function renderSettings(main) {
     for (const d of data.dispositions || []) await db.dispositions.put(d);
     for (const m of data.meetings || []) await db.meetings.put(m);
     for (const t of data.tasks || []) await db.tasks.put(t);
+    for (const s of data.staff || []) await db.staff.put(s);
+    for (const s of data.students || []) await db.students.put(s);
 
     for (const meta of data._attachmentsMeta || []) {
       const entry = zip.file(`attachments/${meta.id}-${meta.name}`);

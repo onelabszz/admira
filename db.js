@@ -71,6 +71,19 @@ Demikian surat keterangan ini dibuat dengan sebenarnya, untuk dapat dipergunakan
   ]);
 });
 
+db.version(3).stores({
+  settings: 'key',
+  letters: '++id, type, date, number, subject, createdAt',
+  letter_numbering: 'id',
+  letter_templates: '++id, name, category',
+  dispositions: '++id, letterId, status, createdAt',
+  meetings: '++id, date, createdAt',
+  tasks: '++id, status, dueDate, meetingId',
+  attachments: '++id, letterId',
+  staff: '++id, name, nip, jabatan, status, createdAt',
+  students: '++id, name, nisn, nis, kelas, status, createdAt',
+});
+
 export async function getSetting(key, def = null) {
   const row = await db.settings.get(key);
   return row ? row.value : def;

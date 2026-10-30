@@ -1,4 +1,4 @@
-const CACHE = 'admira-v9';
+const CACHE = 'admira-v12';
 const ASSETS = [
   './', './index.html', './styles.css',
   './lib.js', './lib-print.js', './lib-icons.js',
@@ -6,6 +6,7 @@ const ASSETS = [
   './db.js', './app.js',
   './pages/letters.js', './pages/meetings-tasks.js',
   './pages/reports.js', './pages/settings.js',
+  './pages/staff.js', './pages/students.js',
   './manifest.webmanifest', './icons/icon.svg',
 ];
 const CDN = [

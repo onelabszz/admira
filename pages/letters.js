@@ -48,6 +48,7 @@ export async function renderLetters(main, type) {
     }
 
     list.innerHTML = `
+      <div class="table-responsive">
       <table class="table">
         <thead>
           <tr>
@@ -80,6 +81,7 @@ export async function renderLetters(main, type) {
           `).join('')}
         </tbody>
       </table>
+      </div>
     `;
   }
 

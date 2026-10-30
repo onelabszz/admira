@@ -55,6 +55,15 @@ function renderShell(app, ws) {
       </div>
     </header>
     <nav class="side" id="side-nav">
+      <div class="mobile-drawer-header">
+        <div class="brand">
+          <span class="brand-mark">A</span>
+          <span class="brand-text" style="color:var(--navy)">Admira<span>.</span></span>
+        </div>
+        <button class="btn-close-drawer" id="btn-close-drawer" aria-label="Tutup menu">
+          ${icon('X', { size: 22 })}
+        </button>
+      </div>
       <div class="nav-section">Utama</div>
       <a href="#/" data-r="">${icon('Home', { size: 17 })}<span>Dashboard</span></a>
       <div class="nav-section">Administrasi</div>
@@ -62,6 +71,9 @@ function renderShell(app, ws) {
       <a href="#/letters/out" data-r="letters-out">${icon('Send', { size: 17 })}<span>Surat Keluar</span></a>
       <a href="#/meetings" data-r="meetings">${icon('Users', { size: 17 })}<span>Rapat</span></a>
       <a href="#/tasks" data-r="tasks">${icon('SquareCheck', { size: 17 })}<span>Tugas</span></a>
+      <div class="nav-section">Data</div>
+      <a href="#/staff" data-r="staff">${icon('UserCog', { size: 17 })}<span>Kepegawaian</span></a>
+      <a href="#/students" data-r="students">${icon('GraduationCap', { size: 17 })}<span>Siswa</span></a>
       <div class="nav-section">Lainnya</div>
       <a href="#/reports" data-r="reports">${icon('ChartColumn', { size: 17 })}<span>Laporan</span></a>
       <a href="#/settings" data-r="settings">${icon('Settings', { size: 17 })}<span>Pengaturan</span></a>
@@ -95,7 +107,10 @@ function setupMobileNav() {
     nav.classList.contains('open') ? close() : open();
   };
 
+  const btnClose = document.getElementById('btn-close-drawer');
+
   btn.addEventListener('click', toggle);
+  if (btnClose) btnClose.addEventListener('click', close);
   overlay.addEventListener('click', close);
   nav.querySelectorAll('a').forEach(a => a.addEventListener('click', close));
   window.addEventListener('hashchange', close);
@@ -162,6 +177,12 @@ async function route() {
     } else if (section === 'meetings' || section === 'tasks') {
       const { renderMeetingsTasks } = await import('./pages/meetings-tasks.js');
       cleanup = await renderMeetingsTasks(main, section);
+    } else if (section === 'staff') {
+      const { renderStaff } = await import('./pages/staff.js');
+      cleanup = await renderStaff(main);
+    } else if (section === 'students') {
+      const { renderStudents } = await import('./pages/students.js');
+      cleanup = await renderStudents(main);
     } else if (section === 'reports') {
       const { renderReports } = await import('./pages/reports.js');
       cleanup = await renderReports(main);
@@ -195,11 +216,13 @@ function updateNav(hash) {
 }
 
 async function renderDashboard(main) {
-  const [lettersIn, lettersOut, tasksOpen, meetings, lastBackup] = await Promise.all([
+  const [lettersIn, lettersOut, tasksOpen, meetings, staffCount, studentsCount, lastBackup] = await Promise.all([
     db.letters.where('type').equals('in').count(),
     db.letters.where('type').equals('out').count(),
     db.tasks.where('status').notEqual('done').count(),
     db.meetings.count(),
+    db.staff.count(),
+    db.students.where('status').equals('Aktif').count(),
     getSetting('last_backup_at'),
   ]);
 
@@ -225,6 +248,8 @@ async function renderDashboard(main) {
       <div class="stat"><div class="num">${lettersOut}</div><div class="lbl">Surat Keluar</div></div>
       <div class="stat"><div class="num">${tasksOpen}</div><div class="lbl">Tugas Belum Selesai</div></div>
       <div class="stat"><div class="num">${meetings}</div><div class="lbl">Rapat Tercatat</div></div>
+      <div class="stat"><div class="num">${staffCount}</div><div class="lbl">Guru & Staf</div></div>
+      <div class="stat"><div class="num">${studentsCount}</div><div class="lbl">Siswa Aktif</div></div>
     </div>
     <div class="card" style="margin-top:16px">
       <h2>Prioritas Tugas</h2>
