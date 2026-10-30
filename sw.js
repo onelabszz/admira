@@ -1,4 +1,4 @@
-const CACHE = 'admira-v3';
+const CACHE = 'admira-v4';
 const ASSETS = [
   './', './index.html', './styles.css',
   './lib.js', './lib-print.js', './lib-icons.js',

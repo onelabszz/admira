@@ -2,7 +2,7 @@ import {
   Menu, X, Building2, Home, Inbox, Send, Users, Settings,
   SquareCheck, ChartColumn, Plus, PenLine, Trash2, Printer,
   MessageSquare, Download, Upload, Check, TriangleAlert, Save, RotateCcw
-} from 'https://esm.sh/lucide@0.451.0';
+} from 'https://cdn.jsdelivr.net/npm/lucide@0.451.0/dist/esm/lucide.mjs';
 
 const REGISTRY = {
   Menu, X, Building2, Home, Inbox, Send, Users, Settings,
