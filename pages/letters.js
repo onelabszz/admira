@@ -1,0 +1,302 @@
+import { db, peekNextLetterNumber, bumpLetterNumber, saveAttachment } from '../db.js';
+import { esc, fmtDate, today } from '../lib.js';
+import { buildPrintHtml, printHtml, formatDateId } from '../lib-print.js';
+import { icon } from '../lib-icons.js';
+
+export async function renderLetters(main, type) {
+  const isIn = type === 'in';
+  const title = isIn ? 'Surat Masuk' : 'Surat Keluar';
+  const ws = (await db.settings.get('workspace'))?.value || {};
+
+  main.innerHTML = `
+    <div class="page-head">
+      <h1>${title}</h1>
+      <button class="btn primary" id="btn-add">${icon('Plus', { size: 16 })} Tambah ${title}</button>
+    </div>
+    <div class="card">
+      <input type="search" id="q" placeholder="Cari nomor, perihal, ${isIn ? 'pengirim' : 'tujuan'}…"
+             style="width:100%;padding:8px;border:1px solid #E5E7EB;border-radius:8px;margin-bottom:12px">
+      <div id="list"></div>
+    </div>
+    <dialog id="dlg"></dialog>
+  `;
+  const list = main.querySelector('#list');
+  const dlg = main.querySelector('#dlg');
+  const q = main.querySelector('#q');
+
+  async function refresh() {
+    const all = await db.letters.where('type').equals(type).reverse().sortBy('createdAt');
+    const term = q.value.trim().toLowerCase();
+    const rows = all.filter(l =>
+      !term || [l.number, l.subject, l.sender, l.recipient]
+        .some(v => (v || '').toLowerCase().includes(term))
+    );
+
+    if (!rows.length) {
+      list.innerHTML = `<p class="muted">Belum ada ${title.toLowerCase()}.</p>`;
+      return;
+    }
+
+    let dispCounts = {};
+    if (isIn) {
+      const ids = rows.map(r => r.id);
+      const disps = await db.dispositions.where('letterId').anyOf(ids).toArray();
+      for (const d of disps) {
+        if (d.status !== 'done') dispCounts[d.letterId] = (dispCounts[d.letterId] || 0) + 1;
+      }
+    }
+
+    list.innerHTML = `
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Tanggal</th><th>Nomor</th>
+            <th>${isIn ? 'Pengirim' : 'Tujuan'}</th>
+            <th>Perihal</th><th>Sifat</th>
+            ${isIn ? '<th>Disposisi</th>' : ''}
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map(l => `
+            <tr>
+              <td>${fmtDate(l.date)}</td>
+              <td><strong>${esc(l.number)}</strong></td>
+              <td>${esc(l.sender || l.recipient || '-')}</td>
+              <td>${esc(l.subject)}</td>
+              <td>${esc(l.property || '-')}</td>
+              ${isIn ? `<td>${dispCounts[l.id]
+                ? `<span class="chip amber">${dispCounts[l.id]} aktif</span>`
+                : '<span class="muted">-</span>'}</td>` : ''}
+              <td class="actions">
+                ${isIn
+                  ? `<button class="btn sm" data-act="disp" data-id="${l.id}">${icon('MessageSquare', { size: 13 })} Disposisi</button>`
+                  : `<button class="btn sm primary" data-act="print" data-id="${l.id}">${icon('Printer', { size: 13 })} Cetak</button>`}
+                <button class="btn sm" data-act="edit" data-id="${l.id}">${icon('PenLine', { size: 13 })} Ubah</button>
+                <button class="btn sm danger" data-act="del" data-id="${l.id}">${icon('Trash2', { size: 13 })} Hapus</button>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  }
+
+  q.addEventListener('input', refresh);
+  main.querySelector('#btn-add').addEventListener('click', () => openForm());
+
+  list.addEventListener('click', async e => {
+    const btn = e.target.closest('button[data-act]');
+    if (!btn) return;
+    const id = Number(btn.dataset.id);
+    const act = btn.dataset.act;
+
+    if (act === 'del') {
+      if (!confirm('Hapus surat ini? Lampiran dan disposisi terkait juga akan dihapus.')) return;
+      await db.transaction('rw', db.letters, db.attachments, db.dispositions, async () => {
+        await db.letters.delete(id);
+        await db.attachments.where('letterId').equals(id).delete();
+        await db.dispositions.where('letterId').equals(id).delete();
+      });
+      refresh();
+    } else if (act === 'edit') {
+      const l = await db.letters.get(id);
+      openForm(l);
+    } else if (act === 'print') {
+      const l = await db.letters.get(id);
+      printHtml(buildPrintHtml({
+        workspace: ws,
+        letter: l,
+        body: l.body || '',
+        signatureDataUrl: ws.signatureDataUrl || null,
+      }));
+    } else if (act === 'disp') {
+      const l = await db.letters.get(id);
+      openDispositions(l);
+    }
+  });
+
+  async function openForm(existing) {
+    const l = existing || {};
+    const templates = isIn ? [] : await db.letter_templates.toArray();
+    let suggestedNumber = l.number || '';
+    if (!existing && !isIn) {
+      suggestedNumber = await peekNextLetterNumber(type, new Date().getFullYear());
+    }
+
+    dlg.innerHTML = `
+      <form method="dialog" class="form" style="max-height:85vh;overflow-y:auto">
+        <h2>${existing ? 'Ubah' : 'Tambah'} ${title}</h2>
+        ${!existing && !isIn ? `
+          <label>Gunakan Template
+            <select name="_template">
+              <option value="">— Tanpa template —</option>
+              ${templates.map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join('')}
+            </select>
+          </label>
+        ` : ''}
+        <label>Tanggal <input type="date" name="date" value="${l.date || today()}" required></label>
+        <label>Nomor Surat <input type="text" name="number" value="${esc(suggestedNumber)}" required></label>
+        <label>${isIn ? 'Pengirim' : 'Tujuan'}
+          <input type="text" name="${isIn ? 'sender' : 'recipient'}"
+                 value="${esc((isIn ? l.sender : l.recipient) || '')}" required>
+        </label>
+        <label>Perihal <input type="text" name="subject" value="${esc(l.subject || '')}" required></label>
+        <label>Sifat <select name="property">
+          <option value="">-</option>
+          ${['Biasa', 'Penting', 'Segera', 'Rahasia'].map(p =>
+            `<option ${l.property === p ? 'selected' : ''}>${p}</option>`).join('')}
+        </select></label>
+        ${!isIn ? `
+          <label>Isi Surat
+            <textarea name="body" rows="14"
+              style="font-family:'Times New Roman',serif;font-size:14px"
+              placeholder="Isi surat. Pilih template di atas untuk mengisi otomatis.">${esc(l.body || '')}</textarea>
+          </label>
+        ` : ''}
+        <label>Lampiran <input type="file" name="file"></label>
+        <label>Catatan Internal <textarea name="notes" rows="2">${esc(l.notes || '')}</textarea></label>
+        <div class="form-actions">
+          <button type="button" class="btn" data-close>Batal</button>
+          <button type="submit" class="btn primary">Simpan</button>
+        </div>
+      </form>
+    `;
+    dlg.showModal();
+    dlg.querySelector('[data-close]').addEventListener('click', () => dlg.close());
+
+    const tplSel = dlg.querySelector('select[name="_template"]');
+    if (tplSel) {
+      tplSel.addEventListener('change', async () => {
+        if (!tplSel.value) return;
+        const t = await db.letter_templates.get(Number(tplSel.value));
+        if (!t) return;
+        const dateVal = dlg.querySelector('input[name="date"]').value;
+        const numVal = dlg.querySelector('input[name="number"]').value;
+        const ctx = {
+          sekolah: ws.name || '',
+          kepala: ws.headmaster || '',
+          tanggal: formatDateId(dateVal),
+          nomor: numVal,
+        };
+        const filled = t.body.replace(/\{\{(\w+)\}\}/g, (_, k) => ctx[k] ?? `{{${k}}}`);
+        dlg.querySelector('textarea[name="body"]').value = filled;
+      });
+    }
+
+    dlg.querySelector('form').addEventListener('submit', async e => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const data = {
+        type,
+        date: fd.get('date'),
+        number: fd.get('number'),
+        subject: fd.get('subject'),
+        property: fd.get('property') || '',
+        notes: fd.get('notes') || '',
+        sender: isIn ? fd.get('sender') : '',
+        recipient: isIn ? '' : fd.get('recipient'),
+        body: isIn ? (existing?.body || '') : (fd.get('body') || ''),
+        updatedAt: Date.now(),
+      };
+      let id = existing?.id;
+      if (existing) {
+        await db.letters.update(id, data);
+      } else {
+        data.createdAt = Date.now();
+        id = await db.letters.add(data);
+        if (!isIn) await bumpLetterNumber(type, new Date(data.date).getFullYear());
+      }
+      const file = fd.get('file');
+      if (file && file.size > 0) await saveAttachment(id, file);
+      dlg.close();
+      refresh();
+    });
+  }
+
+  async function openDispositions(letter) {
+    const all = await db.dispositions.where('letterId').equals(letter.id).reverse().sortBy('createdAt');
+    dlg.innerHTML = `
+      <div class="form" style="max-height:85vh;overflow-y:auto">
+        <h2>Disposisi</h2>
+        <p class="muted" style="margin:0 0 12px">${esc(letter.subject)} — ${esc(letter.number)}</p>
+
+        <div id="disp-list">
+          ${all.length ? all.map(d => `
+            <div class="card" style="margin-bottom:8px;padding:10px">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+                <strong>${esc(d.kepada)}</strong>
+                <span class="chip ${d.status === 'done' ? '' : 'amber'}">
+                  ${d.status === 'done' ? 'Selesai' : d.status === 'progress' ? 'Diproses' : 'Baru'}
+                </span>
+              </div>
+              <div style="font-size:13px;margin:4px 0"><em>${esc(d.instruksi)}</em></div>
+              ${d.catatan ? `<div style="font-size:13px">${esc(d.catatan)}</div>` : ''}
+              ${d.batasWaktu ? `<div style="font-size:12px;color:#6B7280">Batas: ${fmtDate(d.batasWaktu)}</div>` : ''}
+              <div style="text-align:right;margin-top:6px">
+                ${d.status !== 'done'
+                  ? `<button class="btn sm" data-done="${d.id}">Tandai Selesai</button>` : ''}
+                <button class="btn sm danger" data-deld="${d.id}">Hapus</button>
+              </div>
+            </div>
+          `).join('') : '<p class="muted">Belum ada disposisi.</p>'}
+        </div>
+
+        <h3 style="margin-top:16px">Tambah Disposisi</h3>
+        <form id="disp-form">
+          <label>Diteruskan Kepada
+            <input name="kepada" required placeholder="Wakil Kepala, Koordinator, Bendahara…"></label>
+          <label>Instruksi
+            <select name="instruksi" required>
+              <option>Tindak lanjuti</option>
+              <option>Hadiri</option>
+              <option>Siapkan laporan</option>
+              <option>Koordinasikan</option>
+              <option>Arsipkan</option>
+              <option>Selesaikan segera</option>
+            </select></label>
+          <label>Catatan <textarea name="catatan" rows="2"></textarea></label>
+          <label>Batas Waktu <input type="date" name="batasWaktu"></label>
+          <div class="form-actions">
+            <button type="button" class="btn" data-close>Batal</button>
+            <button type="submit" class="btn primary">Simpan</button>
+          </div>
+        </form>
+      </div>
+    `;
+    dlg.showModal();
+    dlg.querySelector('[data-close]').addEventListener('click', () => dlg.close());
+
+    dlg.querySelector('#disp-form').addEventListener('submit', async e => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      await db.dispositions.add({
+        letterId: letter.id,
+        kepada: fd.get('kepada'),
+        instruksi: fd.get('instruksi'),
+        catatan: fd.get('catatan') || '',
+        batasWaktu: fd.get('batasWaktu') || '',
+        status: 'open',
+        createdAt: Date.now(),
+      });
+      openDispositions(letter);
+      refresh();
+    });
+
+    dlg.querySelectorAll('[data-done]').forEach(b => b.addEventListener('click', async () => {
+      await db.dispositions.update(Number(b.dataset.done), { status: 'done', completedAt: Date.now() });
+      openDispositions(letter);
+      refresh();
+    }));
+
+    dlg.querySelectorAll('[data-deld]').forEach(b => b.addEventListener('click', async () => {
+      if (!confirm('Hapus disposisi ini?')) return;
+      await db.dispositions.delete(Number(b.dataset.deld));
+      openDispositions(letter);
+      refresh();
+    }));
+  }
+
+  await refresh();
+  return () => dlg.close();
+}
