@@ -6,3 +6,8 @@ dist/
 .vscode/
 .idea/
 *.admira
+*~
+*#
+.#*
+*.swp
+*.swo
