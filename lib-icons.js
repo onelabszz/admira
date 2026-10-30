@@ -22,8 +22,13 @@ export function icon(name, opts = {}) {
     console.warn('[icon] ikon tidak dikenal:', name);
     return '';
   }
-  const inner = node.map(([tag, attrs]) => {
-    const a = Object.entries(attrs).map(([k, v]) => `${k}="${v}"`).join(' ');
+  // Struktur Lucide: ["svg", attrs, children[]]
+  // children: [ ["line", { attrs }], ["path", { attrs }], ... ]
+  const [, , children = []] = node;
+  const inner = children.map(([tag, attrs]) => {
+    const a = Object.entries(attrs || {})
+      .map(([k, v]) => `${k}="${String(v).replace(/"/g, '&quot;')}"`)
+      .join(' ');
     return `<${tag} ${a}/>`;
   }).join('');
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" class="lucide ${className}" aria-hidden="true">${inner}</svg>`;
