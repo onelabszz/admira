@@ -1,4 +1,4 @@
-const CACHE = 'admira-v7';
+const CACHE = 'admira-v8';
 const ASSETS = [
   './', './index.html', './styles.css',
   './lib.js', './lib-print.js', './lib-icons.js',
@@ -36,19 +36,30 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET') return;
+
   if (req.mode === 'navigate') {
     e.respondWith(
       fetch(req).then(r => {
-        caches.open(CACHE).then(c => c.put(req, r.clone()));
+        // Clone SEKARANG (sinkron) sebelum body dipakai browser
+        const copy = r.clone();
+        caches.open(CACHE).then(c => c.put(req, copy)).catch(() => {});
         return r;
       }).catch(() => caches.match('./index.html'))
     );
     return;
   }
+
   e.respondWith(
-    caches.match(req).then(hit => hit || fetch(req).then(res => {
-      if (res.ok) caches.open(CACHE).then(c => c.put(req, res.clone()));
-      return res;
-    }).catch(() => hit))
+    caches.match(req).then(hit => {
+      if (hit) return hit;
+      return fetch(req).then(res => {
+        if (res.ok) {
+          // Clone sinkron sebelum return
+          const copy = res.clone();
+          caches.open(CACHE).then(c => c.put(req, copy)).catch(() => {});
+        }
+        return res;
+      }).catch(() => hit);
+    })
   );
 });
