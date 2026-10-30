@@ -10,7 +10,7 @@ const ASSETS = [
 const CDN = [
   'https://esm.sh/dexie@4.0.8',
   'https://esm.sh/jszip@3.10.1',
-  'https://esm.sh/lucide@0.451.0',
+  'https://cdn.jsdelivr.net/npm/lucide@0.451.0/dist/esm/lucide.js',
 ];
 
 self.addEventListener('install', e => {
