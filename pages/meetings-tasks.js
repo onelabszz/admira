@@ -1,6 +1,7 @@
 import { db } from '../db.js';
 import { esc, fmtDate, today } from '../lib.js';
 import { icon } from '../lib-icons.js';
+import { confirmDialog } from '../lib-confirm.js';
 
 export async function renderMeetingsTasks(main, section) {
   main.innerHTML = `
@@ -36,7 +37,13 @@ export async function renderMeetingsTasks(main, section) {
         refresh();
       });
       list.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', async () => {
-        if (!confirm('Hapus rapat?')) return;
+        const ok = await confirmDialog({
+          title: 'Hapus rapat ini?',
+          message: 'Data rapat akan dihapus permanen.',
+          confirmText: 'Hapus',
+          danger: true,
+        });
+        if (!ok) return;
         await db.meetings.delete(Number(b.dataset.del));
         refresh();
       }));
@@ -72,7 +79,13 @@ export async function renderMeetingsTasks(main, section) {
         refresh();
       });
       list.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', async () => {
-        if (!confirm('Hapus tugas?')) return;
+        const ok = await confirmDialog({
+          title: 'Hapus tugas ini?',
+          message: 'Tugas akan dihapus permanen.',
+          confirmText: 'Hapus',
+          danger: true,
+        });
+        if (!ok) return;
         await db.tasks.delete(Number(b.dataset.del));
         refresh();
       }));

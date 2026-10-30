@@ -55,11 +55,14 @@ function renderShell(app, ws) {
       </div>
     </header>
     <nav class="side" id="side-nav">
+      <div class="nav-section">Utama</div>
       <a href="#/" data-r="">${icon('Home', { size: 17 })}<span>Dashboard</span></a>
+      <div class="nav-section">Administrasi</div>
       <a href="#/letters/in" data-r="letters-in">${icon('Inbox', { size: 17 })}<span>Surat Masuk</span></a>
       <a href="#/letters/out" data-r="letters-out">${icon('Send', { size: 17 })}<span>Surat Keluar</span></a>
       <a href="#/meetings" data-r="meetings">${icon('Users', { size: 17 })}<span>Rapat</span></a>
       <a href="#/tasks" data-r="tasks">${icon('SquareCheck', { size: 17 })}<span>Tugas</span></a>
+      <div class="nav-section">Lainnya</div>
       <a href="#/reports" data-r="reports">${icon('ChartColumn', { size: 17 })}<span>Laporan</span></a>
       <a href="#/settings" data-r="settings">${icon('Settings', { size: 17 })}<span>Pengaturan</span></a>
     </nav>
@@ -123,11 +126,30 @@ async function updateBackupStatus() {
   dot.classList.toggle('warn', days > 7);
 }
 
+function skeletonPage() {
+  return `
+    <div class="skeleton-card">
+      <div class="skeleton-line lg"></div>
+    </div>
+    <div class="skeleton-grid">
+      <div class="skeleton-stat"></div>
+      <div class="skeleton-stat"></div>
+      <div class="skeleton-stat"></div>
+      <div class="skeleton-stat"></div>
+    </div>
+    <div class="skeleton-card">
+      <div class="skeleton-line md"></div>
+      <div class="skeleton-line"></div>
+      <div class="skeleton-line sm"></div>
+    </div>
+  `;
+}
+
 async function route() {
   if (cleanup) { try { cleanup(); } catch {} cleanup = null; }
   const main = document.getElementById('main');
   if (!main) return;
-  main.innerHTML = '<p class="muted">Memuat…</p>';
+  main.innerHTML = skeletonPage();
   const hash = location.hash.replace(/^#\/?/, '');
   const [section] = hash.split('/');
   updateNav(hash);
@@ -151,7 +173,18 @@ async function route() {
     }
   } catch (err) {
     console.error(err);
-    main.innerHTML = `<div class="card"><p class="error">Terjadi kesalahan: ${esc(err.message)}</p></div>`;
+    main.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">${icon('TriangleAlert', { size: 28 })}</div>
+        <div class="empty-title">Terjadi kesalahan</div>
+        <div class="empty-hint">${esc(err.message)}</div>
+      </div>
+    `;
+  } finally {
+    // transisi masuk
+    main.classList.remove('page-enter');
+    void main.offsetWidth;
+    main.classList.add('page-enter');
   }
 }
 

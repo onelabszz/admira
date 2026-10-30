@@ -2,6 +2,7 @@ import { db, peekNextLetterNumber, bumpLetterNumber, saveAttachment } from '../d
 import { esc, fmtDate, today } from '../lib.js';
 import { buildPrintHtml, printHtml, formatDateId } from '../lib-print.js';
 import { icon } from '../lib-icons.js';
+import { confirmDialog } from '../lib-confirm.js';
 
 export async function renderLetters(main, type) {
   const isIn = type === 'in';
@@ -92,7 +93,13 @@ export async function renderLetters(main, type) {
     const act = btn.dataset.act;
 
     if (act === 'del') {
-      if (!confirm('Hapus surat ini? Lampiran dan disposisi terkait juga akan dihapus.')) return;
+      const ok = await confirmDialog({
+        title: 'Hapus surat ini?',
+        message: 'Lampiran dan disposisi terkait juga akan dihapus. Tindakan ini tidak dapat dibatalkan.',
+        confirmText: 'Hapus',
+        danger: true,
+      });
+      if (!ok) return;
       await db.transaction('rw', db.letters, db.attachments, db.dispositions, async () => {
         await db.letters.delete(id);
         await db.attachments.where('letterId').equals(id).delete();
@@ -290,7 +297,13 @@ export async function renderLetters(main, type) {
     }));
 
     dlg.querySelectorAll('[data-deld]').forEach(b => b.addEventListener('click', async () => {
-      if (!confirm('Hapus disposisi ini?')) return;
+      const ok = await confirmDialog({
+        title: 'Hapus disposisi ini?',
+        message: 'Disposisi akan dihapus permanen.',
+        confirmText: 'Hapus',
+        danger: true,
+      });
+      if (!ok) return;
       await db.dispositions.delete(Number(b.dataset.deld));
       openDispositions(letter);
       refresh();

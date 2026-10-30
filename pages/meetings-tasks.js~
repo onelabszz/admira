@@ -1,0 +1,91 @@
+import { db } from '../db.js';
+import { esc, fmtDate, today } from '../lib.js';
+import { icon } from '../lib-icons.js';
+import { confirmDialog } from '../lib-confirm.js';
+
+export async function renderMeetingsTasks(main, section) {
+  main.innerHTML = `
+    <div class="page-head"><h1>${section === 'meetings' ? 'Rapat' : 'Tugas'}</h1></div>
+    <div class="card"><div id="list"></div></div>
+  `;
+  const list = main.querySelector('#list');
+
+  async function refresh() {
+    if (section === 'meetings') {
+      const rows = await db.meetings.reverse().sortBy('date');
+      list.innerHTML = `
+        <button class="btn primary" id="add">${icon('Plus', { size: 16 })} Tambah Rapat</button>
+        <table class="table" style="margin-top:12px">
+          <thead><tr><th>Tanggal</th><th>Judul</th><th>Lokasi</th><th></th></tr></thead>
+          <tbody>
+            ${rows.map(m => `
+              <tr>
+                <td>${fmtDate(m.date)}</td>
+                <td>${esc(m.title)}</td>
+                <td>${esc(m.location || '-')}</td>
+                <td class="actions"><button class="btn sm danger" data-del="${m.id}">${icon('Trash2', { size: 13 })} Hapus</button></td>
+              </tr>
+            `).join('') || `<tr><td colspan="4" class="muted">Belum ada rapat.</td></tr>`}
+          </tbody>
+        </table>
+      `;
+      list.querySelector('#add').addEventListener('click', async () => {
+        const title = prompt('Judul rapat:'); if (!title) return;
+        const date = prompt('Tanggal (YYYY-MM-DD):', today()); if (!date) return;
+        const location = prompt('Lokasi:', '') || '';
+        await db.meetings.add({ title, date, location, createdAt: Date.now() });
+        refresh();
+      });
+      list.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', async () => {
+        if (!confirm('Hapus rapat?')) return;
+        await db.meetings.delete(Number(b.dataset.del));
+        refresh();
+      }));
+    } else {
+      const rows = await db.tasks.reverse().sortBy('createdAt');
+      list.innerHTML = `
+        <button class="btn primary" id="add">${icon('Plus', { size: 16 })} Tambah Tugas</button>
+        <table class="table" style="margin-top:12px">
+          <thead><tr><th>Judul</th><th>PIC</th><th>Jatuh Tempo</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+            ${rows.map(t => `
+              <tr>
+                <td>${esc(t.title)}</td>
+                <td>${esc(t.pic || '-')}</td>
+                <td>${fmtDate(t.dueDate)}</td>
+                <td><span class="chip ${t.status==='done'?'':'amber'}">${t.status === 'done' ? 'Selesai' : 'Aktif'}</span></td>
+                <td class="actions">
+                  <button class="btn sm" data-done="${t.id}">${t.status==='done'
+                    ? icon('RotateCcw', { size: 13 })
+                    : icon('Check', { size: 13 })} ${t.status==='done'?'Buka':'Selesai'}</button>
+                  <button class="btn sm danger" data-del="${t.id}">${icon('Trash2', { size: 13 })} Hapus</button>
+                </td>
+              </tr>
+            `).join('') || `<tr><td colspan="5" class="muted">Belum ada tugas.</td></tr>`}
+          </tbody>
+        </table>
+      `;
+      list.querySelector('#add').addEventListener('click', async () => {
+        const title = prompt('Judul tugas:'); if (!title) return;
+        const pic = prompt('PIC:', '') || '';
+        const dueDate = prompt('Jatuh tempo (YYYY-MM-DD):', today()) || '';
+        await db.tasks.add({ title, pic, dueDate, status: 'open', createdAt: Date.now() });
+        refresh();
+      });
+      list.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', async () => {
+        if (!confirm('Hapus tugas?')) return;
+        await db.tasks.delete(Number(b.dataset.del));
+        refresh();
+      }));
+      list.querySelectorAll('[data-done]').forEach(b => b.addEventListener('click', async () => {
+        const id = Number(b.dataset.done);
+        const t = await db.tasks.get(id);
+        await db.tasks.update(id, { status: t.status === 'done' ? 'open' : 'done' });
+        refresh();
+      }));
+    }
+  }
+
+  await refresh();
+  return () => {};
+}

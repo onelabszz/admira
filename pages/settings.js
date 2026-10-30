@@ -2,6 +2,8 @@ import JSZip from 'https://esm.sh/jszip@3.10.1';
 import { db, getSetting, setSetting } from '../db.js';
 import { esc, download } from '../lib.js';
 import { icon } from '../lib-icons.js';
+import { toast } from '../lib-toast.js';
+import { confirmDialog } from '../lib-confirm.js';
 
 export async function renderSettings(main) {
   const ws = await getSetting('workspace', {});
@@ -67,7 +69,7 @@ export async function renderSettings(main) {
     const fd = new FormData(e.target);
     const updated = { ...ws, ...Object.fromEntries(fd.entries()) };
     await setSetting('workspace', updated);
-    alert('Pengaturan tersimpan.');
+    toast.success('Pengaturan tersimpan.');
   });
 
   // Logo upload
@@ -132,11 +134,17 @@ export async function renderSettings(main) {
   main.querySelector('#restore').addEventListener('change', async e => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!confirm('Restore akan MENGGANTI semua data saat ini. Lanjutkan?')) return;
+    const ok = await confirmDialog({
+      title: 'Pulihkan dari backup?',
+      message: 'Seluruh data saat ini akan DIGANTI dengan isi file backup. Tindakan ini tidak dapat dibatalkan.',
+      confirmText: 'Pulihkan',
+      danger: true,
+    });
+    if (!ok) return;
 
     const zip = await JSZip.loadAsync(file);
     const dataFile = zip.file('data.json');
-    if (!dataFile) { alert('File backup tidak valid.'); return; }
+    if (!dataFile) { toast.error('File backup tidak valid.'); return; }
     const data = JSON.parse(await dataFile.async('string'));
 
     for (const t of ['letters', 'letter_numbering', 'letter_templates', 'dispositions', 'meetings', 'tasks', 'attachments']) {
@@ -159,8 +167,8 @@ export async function renderSettings(main) {
     }
 
     await setSetting('last_backup_at', Date.now());
-    alert('Restore selesai. Aplikasi akan dimuat ulang.');
-    location.reload();
+    toast.success('Restore selesai. Memuat ulang…', { duration: 2000 });
+    setTimeout(() => location.reload(), 900);
   });
 
   return () => {};
