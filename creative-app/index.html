@@ -142,7 +142,7 @@ tailwind.config={darkMode:'class',theme:{extend:{fontFamily:{sans:['Inter','sans
       </div>
       <div class="sb-brand-text">
         <div class="sb-brand-name">Guru Berbagi</div>
-        <div class="sb-brand-ver" id="sideVersi">Portal · v4.138</div>
+        <div class="sb-brand-ver" id="sideVersi">Portal · v4.139</div>
       </div>
     </div>
 
@@ -179,7 +179,7 @@ tailwind.config={darkMode:'class',theme:{extend:{fontFamily:{sans:['Inter','sans
         <a href="?page=help">Bantuan</a>
         <a href="?page=privacy">Kebijakan</a>
       </div>
-      <div class="sb-footer-copyright">Tim Kreatif © 2026 · <span id="sideVersi2">v4.138</span></div>
+      <div class="sb-footer-copyright">Tim Kreatif © 2026 · <span id="sideVersi2">v4.139</span></div>
     </div>
 
     <!-- User -->
@@ -325,6 +325,50 @@ tailwind.config={darkMode:'class',theme:{extend:{fontFamily:{sans:['Inter','sans
                 <div class="hero-illus-fallback-v8">
                   <i data-lucide="sparkles"></i>
                 </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================
+             PANEL HARI INI — ringkasan adaptif beranda
+             ============================================ -->
+        <section id="todayPanel" class="today-panel animate-fade-up" aria-label="Ringkasan Hari Ini">
+          <div class="today-head">
+            <div class="today-head-text">
+              <span class="today-eyebrow"><i data-lucide="calendar-check-2"></i> Ringkasan Hari Ini</span>
+              <h2 id="todaySapaan" class="today-sapaan">Selamat datang, Guru</h2>
+              <p id="todayTanggal" class="today-tanggal">—</p>
+            </div>
+            <div class="today-wx" title="Cuaca Selogiri">
+              <span id="todayWxEmoji" class="today-wx-emoji">☀️</span>
+              <span class="today-wx-main"><b id="todayWxTemp">--°</b><small id="todayWxDesc">Memuat…</small></span>
+            </div>
+          </div>
+
+          <div class="today-grid">
+            <button class="today-cell" onclick="navPage('agenda')" aria-label="Lihat agenda">
+              <span class="today-cell-label"><i data-lucide="calendar-days"></i> Agenda Terdekat</span>
+              <span id="todayAgenda" class="today-cell-body">
+                <span class="skel skel-line" style="width:80%"></span>
+                <span class="skel skel-line w45"></span>
+              </span>
+            </button>
+
+            <div class="today-cell">
+              <span class="today-cell-label"><i data-lucide="sparkles"></i> Karya Pilihan</span>
+              <button id="todayKarya" class="today-karya" data-id="" onclick="bukaSpotlight(this.dataset.id)" aria-label="Buka karya pilihan">
+                <span class="skel skel-line" style="width:80%"></span>
+                <span class="skel skel-line w45"></span>
+              </button>
+            </div>
+
+            <div class="today-cell today-quote">
+              <span class="today-cell-label"><i data-lucide="quote"></i> Kata Mutiara</span>
+              <p id="todayQuoteText" class="today-quote-text">"Memuat kata mutiara…"</p>
+              <div class="today-quote-foot">
+                <span id="todayQuoteAuthor" class="today-quote-author">—</span>
+                <button onclick="gantiQuote()" class="today-quote-btn" aria-label="Ganti kata mutiara" title="Ganti kata mutiara"><i data-lucide="refresh-cw"></i></button>
               </div>
             </div>
           </div>
@@ -564,7 +608,7 @@ tailwind.config={darkMode:'class',theme:{extend:{fontFamily:{sans:['Inter','sans
 
           <div class="card p-4 flex items-center justify-between text-[11px] font-semibold text-slate-500 md:col-span-1">
             <span class="flex items-center gap-2"><i data-lucide="smartphone" class="w-3.5 h-3.5"></i> Guru Berbagi Selogiri</span>
-            <span id="aboutVer">v4.138</span>
+            <span id="aboutVer">v4.139</span>
           </div>
 
           <a href="https://slg-timkreatif.github.io/guruberbagi/akun/guru.html"
@@ -798,7 +842,7 @@ tailwind.config={darkMode:'class',theme:{extend:{fontFamily:{sans:['Inter','sans
           <i data-lucide="rotate-ccw" class="w-4 h-4"></i> Reset ke Default
         </button>
 
-        <p class="text-[10px] text-center text-slate-400">Tim Kreatif © 2026 · <span id="setVersi">v4.138</span></p>
+        <p class="text-[10px] text-center text-slate-400">Tim Kreatif © 2026 · <span id="setVersi">v4.139</span></p>
 
       </section>
 
@@ -984,7 +1028,7 @@ tailwind.config={darkMode:'class',theme:{extend:{fontFamily:{sans:['Inter','sans
         <button data-nav="profile" onclick="navPage('profile');closeDrawer()" class="side-btn nav-inactive w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold"><i data-lucide="user" class="w-4 h-4"></i>Profil</button>
       </nav>
       <div id="drawerFooter" class="border-t border-slate-100 p-4 shrink-0">
-        <p class="text-[10px] text-slate-400 text-center font-medium">Tim Kreatif © 2026 · <span id="drawerVersi">v4.138</span></p>
+        <p class="text-[10px] text-slate-400 text-center font-medium">Tim Kreatif © 2026 · <span id="drawerVersi">v4.139</span></p>
       </div>
     </div>
   </div>
