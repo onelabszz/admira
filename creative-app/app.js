@@ -1575,7 +1575,7 @@ function renderMenuIcon(icon,cls){
   cls=cls||'w-5 h-5';
   if(!icon)return `<i data-lucide="app-window" class="${cls}"></i>`;
   if(isUrlIcon(icon)){
-    return `<img src="${esc(icon)}" class="menu-icon-img w-full h-full object-cover" alt="" loading="lazy" onerror="this.style.opacity='0.3'">`;
+    return `<img src="${esc(icon)}" class="menu-icon-img" alt="" loading="lazy" onerror="this.style.opacity='0.3'">`;
   }
   return `<i data-lucide="${esc(icon)}" class="${cls}"></i>`;
 }
@@ -1782,7 +1782,7 @@ function openParentMenu(m,children){
   const iconBox=$('pParentIcon');
   if(iconBox){
     if(isUrlIcon(m.icon)){
-      iconBox.innerHTML=`<img src="${esc(m.icon)}" class="menu-icon-img w-full h-full object-cover" alt="">`;
+      iconBox.innerHTML=`<img src="${esc(m.icon)}" class="menu-icon-img" alt="">`;
     }else{
       iconBox.innerHTML=`<i data-lucide="${esc(m.icon||'folder')}" class="w-5 h-5"></i>`;
     }
@@ -6814,8 +6814,35 @@ async function bukaSpotlight(id){
   openModal('mApp');
 }
 
-function bukaGaleriMedia(){
-  window.open('galeri.html', '_blank', 'noopener');
+async function bukaGaleriMedia(){
+  const list = await fetchSpotlight();
+  if(!list.length){
+    toast('Belum ada karya untuk ditampilkan','info');
+    return;
+  }
+  const items = list.map(item => {
+    const meta = _spotlightMeta(item['Jenis Konten']);
+    const cover = _spotlightCover(item);
+    return `<button onclick="tutupModal('mPop');bukaSpotlight('${esc(item.ID)}')" class="text-left rounded-2xl overflow-hidden border border-slate-100 bg-white active:scale-[.97] transition">
+      <span class="block aspect-video overflow-hidden" style="background:${meta.grad}">
+        ${cover
+          ? `<img src="${esc(cover)}" alt="" loading="lazy" referrerpolicy="no-referrer" class="w-full h-full object-cover" onerror="this.remove()">`
+          : `<span class="w-full h-full flex items-center justify-center text-white"><i data-lucide="${meta.icon}" class="w-6 h-6"></i></span>`}
+      </span>
+      <span class="block px-2.5 py-2">
+        <span class="block text-[11px] font-extrabold text-slate-800 leading-tight line-clamp-2">${esc(item['Judul Media']||'Karya')}</span>
+        <span class="block text-[9px] text-slate-400 mt-1 truncate">${esc(item['Nama Guru']||'Guru')} · ${esc(item['Jenis Konten']||'Karya')}</span>
+      </span>
+    </button>`;
+  }).join('');
+
+  $('popContent').innerHTML = `
+    <div class="p-5 space-y-3">
+      <p class="text-base font-extrabold text-slate-800">Semua Karya · ${list.length}</p>
+      <div class="grid grid-cols-2 gap-2.5">${items}</div>
+    </div>`;
+  icons();
+  openModal('mPop');
 }
 
 /* ============================================================
@@ -6855,6 +6882,9 @@ async function renderSpotlight(force){
     track.innerHTML = list.map(item => {
       const meta = _spotlightMeta(item['Jenis Konten']);
       const views = parseInt(item.VIEWS)||0;
+      const viewsLabel = views >= 1000
+        ? (views/1000).toFixed(1).replace('.0','').replace('.',',')+'rb'
+        : String(views);
       const initials = _spotlightInitials(item['Nama Guru']);
       const mapel = item['Mata Pelajaran']||'';
       const jenjang = _spotlightJenjang(item['Fase/Kelas']);
@@ -6864,7 +6894,7 @@ async function renderSpotlight(force){
       const isNew = ts && (Date.now()-ts) < 7*24*60*60*1000;
       const gid = (item.guru_id||'').trim();
       const avatar = gid
-        ? `<img src="${esc(fotoUrl(gid,true))}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">`
+        ? `${esc(initials)}<img src="${esc(fotoUrl(gid,true))}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">`
         : esc(initials);
       const open = `bukaSpotlight('${esc(item.ID)}')`;
       return `
@@ -6877,18 +6907,18 @@ async function renderSpotlight(force){
               <div class="spot-top">
                 ${isNew ? '<span class="spot-baru"><i data-lucide="sparkles"></i>Baru</span>' : '<span></span>'}
                 <span class="spot-top-right">
-                  <span class="spot-type" title="${esc(jenis)}"><i data-lucide="${meta.icon}"></i></span>
-                  <span class="spot-views"><i data-lucide="eye"></i>${views}</span>
+                  <span class="spot-type" title="${esc(jenis)}">${esc(jenis)}</span>
+                  <span class="spot-views"><i data-lucide="eye"></i>${viewsLabel}</span>
                 </span>
               </div>
-              <div class="spot-overlay-body">
-                ${(mapel||jenjang) ? `<div class="spot-meta">${esc(mapel)}${mapel&&jenjang?' · ':''}${esc(jenjang)}</div>` : ''}
-                <p class="spot-title">${esc(item['Judul Media']||'Tanpa Judul')}</p>
-                <div class="spot-authorline">
-                  <span class="spot-avatar" style="background:${meta.agrad}">${avatar}</span>
-                  <span class="spot-author">${esc(item['Nama Guru']||'Guru')}</span>
-                  <span class="spot-open">Buka <i data-lucide="arrow-right"></i></span>
-                </div>
+            </div>
+            <div class="spot-body">
+              ${(mapel||jenjang) ? `<div class="spot-meta">${esc(mapel)}${mapel&&jenjang?' · ':''}${esc(jenjang)}</div>` : ''}
+              <p class="spot-title">${esc(item['Judul Media']||'Tanpa Judul')}</p>
+              <div class="spot-authorline">
+                <span class="spot-avatar" style="background:${meta.agrad}">${avatar}</span>
+                <span class="spot-author">${esc(item['Nama Guru']||'Guru')}</span>
+                <span class="spot-open">Buka <i data-lucide="arrow-right"></i></span>
               </div>
             </div>
           </div>
