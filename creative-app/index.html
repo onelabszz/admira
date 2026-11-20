@@ -65,6 +65,7 @@
 <script>
 tailwind.config={darkMode:'class',theme:{extend:{fontFamily:{sans:['Inter','sans-serif']},animation:{'fade-up':'fadeUp .45s ease both','pop':'pop .3s cubic-bezier(.34,1.56,.64,1) both','spin':'spin .6s linear infinite'},keyframes:{fadeUp:{'0%':{opacity:0,transform:'translateY(12px)'},'100%':{opacity:1,transform:'translateY(0)'}},pop:{'0%':{opacity:0,transform:'scale(.85)'},'100%':{opacity:1,transform:'scale(1)'}},spin:{to:{transform:'rotate(360deg)'}}}}}}
 </script>
+<link rel="stylesheet" href="ui-core.css?v=1.0">
 <link rel="stylesheet" href="styles.css?v=5.0">
 </head>
 <body class="min-h-screen" data-page="home" data-navbar="floating" data-navbar-color="dark" data-navmode="bottom" data-density="normal" data-iconstyle="default">
@@ -142,7 +143,7 @@ tailwind.config={darkMode:'class',theme:{extend:{fontFamily:{sans:['Inter','sans
       </div>
       <div class="sb-brand-text">
         <div class="sb-brand-name">Guru Berbagi</div>
-        <div class="sb-brand-ver" id="sideVersi">Portal · v4.139</div>
+        <div class="sb-brand-ver" id="sideVersi">Portal · v4.140</div>
       </div>
     </div>
 
@@ -179,7 +180,7 @@ tailwind.config={darkMode:'class',theme:{extend:{fontFamily:{sans:['Inter','sans
         <a href="?page=help">Bantuan</a>
         <a href="?page=privacy">Kebijakan</a>
       </div>
-      <div class="sb-footer-copyright">Tim Kreatif © 2026 · <span id="sideVersi2">v4.139</span></div>
+      <div class="sb-footer-copyright">Tim Kreatif © 2026 · <span id="sideVersi2">v4.140</span></div>
     </div>
 
     <!-- User -->
@@ -608,7 +609,7 @@ tailwind.config={darkMode:'class',theme:{extend:{fontFamily:{sans:['Inter','sans
 
           <div class="card p-4 flex items-center justify-between text-[11px] font-semibold text-slate-500 md:col-span-1">
             <span class="flex items-center gap-2"><i data-lucide="smartphone" class="w-3.5 h-3.5"></i> Guru Berbagi Selogiri</span>
-            <span id="aboutVer">v4.139</span>
+            <span id="aboutVer">v4.140</span>
           </div>
 
           <a href="https://slg-timkreatif.github.io/guruberbagi/akun/guru.html"
@@ -624,7 +625,7 @@ tailwind.config={darkMode:'class',theme:{extend:{fontFamily:{sans:['Inter','sans
             <i data-lucide="external-link" class="w-4 h-4 text-slate-300 shrink-0"></i>
           </a>
 
-          <button onclick="doLogout()" class="w-full bg-rose-50 text-rose-600 font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 active:scale-[.98] transition md:col-span-2"><i data-lucide="log-out" class="w-4 h-4"></i> Keluar Aplikasi</button>
+          <button onclick="doLogout()" class="ui-btn ui-btn-danger w-full py-3.5 md:col-span-2"><i data-lucide="log-out" class="w-4 h-4"></i> Keluar Aplikasi</button>
         </div>
       </section>
 
@@ -842,7 +843,7 @@ tailwind.config={darkMode:'class',theme:{extend:{fontFamily:{sans:['Inter','sans
           <i data-lucide="rotate-ccw" class="w-4 h-4"></i> Reset ke Default
         </button>
 
-        <p class="text-[10px] text-center text-slate-400">Tim Kreatif © 2026 · <span id="setVersi">v4.139</span></p>
+        <p class="text-[10px] text-center text-slate-400">Tim Kreatif © 2026 · <span id="setVersi">v4.140</span></p>
 
       </section>
 
@@ -1028,7 +1029,7 @@ tailwind.config={darkMode:'class',theme:{extend:{fontFamily:{sans:['Inter','sans
         <button data-nav="profile" onclick="navPage('profile');closeDrawer()" class="side-btn nav-inactive w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold"><i data-lucide="user" class="w-4 h-4"></i>Profil</button>
       </nav>
       <div id="drawerFooter" class="border-t border-slate-100 p-4 shrink-0">
-        <p class="text-[10px] text-slate-400 text-center font-medium">Tim Kreatif © 2026 · <span id="drawerVersi">v4.139</span></p>
+        <p class="text-[10px] text-slate-400 text-center font-medium">Tim Kreatif © 2026 · <span id="drawerVersi">v4.140</span></p>
       </div>
     </div>
   </div>
@@ -1138,7 +1139,7 @@ tailwind.config={darkMode:'class',theme:{extend:{fontFamily:{sans:['Inter','sans
         <button id="btnLogin" type="submit" class="w-full acc-bg text-white font-bold py-3.5 rounded-xl active:scale-[.98] transition shadow-sm">Masuk</button>
       </form>
       <div class="flex items-center gap-3 my-4"><div class="h-px bg-slate-100 flex-1"></div><p class="text-[10px] font-bold text-slate-400">BELUM PUNYA AKUN?</p><div class="h-px bg-slate-100 flex-1"></div></div>
-      <a href="https://slg-timkreatif.github.io/guruberbagi/form.html" target="_blank" class="w-full acc-soft acc-text font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 active:scale-[.98] transition"><i data-lucide="user-plus" class="w-4 h-4"></i> Buat Akun Baru</a>
+      <a href="https://slg-timkreatif.github.io/guruberbagi/form.html" target="_blank" class="ui-btn ui-btn-soft w-full py-3.5"><i data-lucide="user-plus" class="w-4 h-4"></i> Buat Akun Baru</a>
     </div>
   </div>
 
@@ -1176,7 +1177,7 @@ tailwind.config={darkMode:'class',theme:{extend:{fontFamily:{sans:['Inter','sans
             <p id="pParentSub" class="text-[10px] text-slate-500 truncate">—</p>
           </div>
         </div>
-        <button onclick="tutupPanel('pParent')" aria-label="Tutup" class="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center shrink-0"><i data-lucide="x" class="w-4 h-4 text-slate-500"></i></button>
+        <button onclick="tutupPanel('pParent')" aria-label="Tutup" class="ui-btn ui-btn-ghost ui-btn-icon shrink-0"><i data-lucide="x" class="w-4 h-4 text-slate-500"></i></button>
       </div>
       <div id="pParentList" class="flex-1 overflow-y-auto no-scroll p-4 space-y-2"></div>
     </div>

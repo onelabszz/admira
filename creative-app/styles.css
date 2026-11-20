@@ -1,29 +1,10 @@
-:root{
-  --acc:#0D9488;--acc2:#14B8A6;--acc-soft:#DDF5F2;--acc-text:#0B7C72;
-  --acc-ring:rgba(13,148,136,.35);--bg:#F6F5F9;--card:#fff;--border:#E8E6EE;
-  --r-sm:8px;--r-md:12px;--r-lg:16px;--r-xl:20px;--r-2xl:24px;
-  --p-sm:12px;--p-md:16px;--p-lg:20px;--p-xl:24px;
-  --fs-2xs:10px;--fs-xs:11px;--fs-sm:12px;--fs-md:14px;--fs-lg:20px;
-  --shadow-1:0 1px 3px rgba(20,18,26,.05);
-  --shadow-2:0 4px 12px rgba(20,18,26,.08);
-}
-html[data-acc="biru"]{--acc:#2563eb;--acc2:#0ea5e9;--acc-soft:#dbeafe;--acc-text:#2563eb;--acc-ring:rgba(37,99,235,.35)}
-html[data-acc="violet"]{--acc:#7c3aed;--acc2:#a855f7;--acc-soft:#ede9fe;--acc-text:#7c3aed;--acc-ring:rgba(124,58,237,.35)}
-html[data-acc="amber"]{--acc:#d97706;--acc2:#f59e0b;--acc-soft:#fef3c7;--acc-text:#d97706;--acc-ring:rgba(217,119,6,.35)}
-html[data-acc="rose"]{--acc:#e11d48;--acc2:#f43f5e;--acc-soft:#ffe4e6;--acc-text:#e11d48;--acc-ring:rgba(225,29,72,.35)}
-
-*{-webkit-tap-highlight-color:transparent}
-:where(a,button,[role="button"],input,textarea,select,[tabindex]):focus-visible{outline:2px solid var(--acc);outline-offset:2px}
-body{font-family:'Inter',sans-serif;background:var(--bg)}
+/* Token, reset ringan, dan komponen dasar ada di ui-core.css,
+   yang dimuat sebelum stylesheet ini. */
 html,body{overflow-x:clip;touch-action:manipulation}
-a{-webkit-touch-callout:default}
-.no-scroll::-webkit-scrollbar{display:none}
-.no-scroll{scrollbar-width:none}
 
 /* ============================================
-   CARD
+   CARD — base di ui-core.css
    ============================================ */
-.card{background:var(--card);border:1px solid var(--border);box-shadow:0 1px 3px rgba(20,18,26,.05);border-radius:1.25rem}
 .modal-card{border-radius:var(--r-2xl)}
 
 /* ============================================
@@ -41,16 +22,10 @@ a{-webkit-touch-callout:default}
 .btn-loading.btn-loading-acc::after{border-color:rgba(13,148,136,.25);border-top-color:var(--acc)}
 @keyframes btnSpin{to{transform:rotate(360deg)}}
 
-.skeleton{background:linear-gradient(90deg,#ECEAF2 25%,#F6F5F9 50%,#ECEAF2 75%);background-size:800px 100%;animation:shim 1.3s linear infinite;border-radius:var(--r-md)}
-@keyframes shim{0%{background-position:-400px 0}100%{background-position:400px 0}}
+/* Skeleton ada di ui-core.css (.skeleton dan alias .skel) */
 
-.acc-bg{background-color:var(--acc)}
-.acc-grad{background-color:var(--acc);background-image:linear-gradient(135deg,var(--acc),var(--acc2))}
-.acc-soft{background-color:var(--acc-soft)}
-.acc-text{color:var(--acc-text)}
-.acc-ring:focus{outline:none;box-shadow:0 0 0 3px var(--acc-ring)}
+/* acc-*, lbl, inp, dan komponen dasar lain ada di ui-core.css */
 .grad-text{text-shadow:0 1px 2px rgba(0,0,0,.15)}
-.lbl{display:block;font-size:.68rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#8B8794;margin-bottom:.35rem}
 
 html.fs-besar{font-size:17.5px}
 html.no-anim *,html.no-anim *::before,html.no-anim *::after{animation:none!important;transition:none!important}
@@ -189,19 +164,7 @@ html.dark #syncOverlay{
 .empty-state .es-title{font-size:.85rem;font-weight:800;color:#1E293B}
 .empty-state .es-desc{font-size:.75rem;color:#64748B;margin-top:.3rem;max-width:22rem}
 
-/* Skeleton universal untuk kartu & baris */
-.skel{position:relative;overflow:hidden;background:#E9EDF3;border-radius:8px}
-html.dark .skel{background:#2B3038}
-.skel::after{content:'';position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,rgba(255,255,255,.65),transparent);animation:skelShimmer 1.25s infinite}
-html.dark .skel::after{background:linear-gradient(90deg,transparent,rgba(255,255,255,.06),transparent)}
-@keyframes skelShimmer{to{transform:translateX(100%)}}
-.skel-line{display:block;height:10px;margin-top:7px}
-.skel-line.w70{width:70%}
-.skel-line.w45{width:45%}
-.skel-avatar{width:36px;height:36px;border-radius:12px;flex-shrink:0}
-.skel-card{padding:12px;border-radius:16px;background:var(--card);border:1px solid var(--border)}
-.skel-row{display:flex;align-items:center;gap:10px;padding:10px 0}
-.skel-row + .skel-row{border-top:1px solid var(--border)}
+/* Skeleton universal ada di ui-core.css */
 
 .side-btn,.nav-btn{transition:background-color .15s ease,color .15s ease}
 
@@ -293,35 +256,13 @@ body:not([data-navmode="hamburger"]) #hamburgerBtn{display:none!important}
 }
 #mDrawerSheet{will-change:transform}
 
-.seg-btn{padding:8px 12px;border-radius:var(--r-md);font-size:11px;font-weight:800;background:#F6F5F9;color:#64748B;border:1px solid #E8E6EE;cursor:pointer;transition:all .15s}
-.seg-btn:active{transform:scale(.97)}
-.seg-btn.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+/* .seg-btn ada di ui-core.css */
 
 .filter-chip{flex-shrink:0;padding:6px 12px;border-radius:9999px;font-size:11px;font-weight:700;background:var(--card);border:1px solid var(--border);color:#64748B;transition:all .15s;white-space:nowrap}
 .filter-chip:active{transform:scale(.95)}
 .filter-chip.on{background:var(--acc);color:#fff;border-color:var(--acc)}
 
-/* ============================================
-   IKON MENU DARI URL — inset rounded, selaras tile aplikasi
-   ============================================ */
-.menu-icon-img{
-  width:82%!important;
-  height:82%!important;
-  object-fit:contain!important;
-  border-radius:26%!important;
-  background:transparent;
-  box-shadow:0 0 0 1px rgba(255,255,255,.7),0 2px 6px rgba(20,18,26,.10);
-  transition:transform .25s cubic-bezier(.34,1.56,.64,1),box-shadow .25s ease;
-}
-:is(a,button):hover .menu-icon-img{
-  transform:translateY(-1px) scale(1.04);
-  box-shadow:0 0 0 1px rgba(255,255,255,.85),0 5px 12px rgba(20,18,26,.16);
-}
-/* Bahasa ikon yang sama untuk wrapper ikon lain */
-:is(.dc-icon,.nt-icon,.notif-icon,.q-tile-icon) > img{
-  width:82%!important;height:82%!important;
-  object-fit:contain!important;border-radius:26%!important;
-}
+/* Ikon menu URL dan komponen dasar lain ada di ui-core.css */
 
 /* ============================================
    WORKSTATION STUDIO — v4.80
@@ -693,17 +634,8 @@ html.dark .upd-banner-close svg{color:#94A0AE}
 
 /* ============================================
    DARK MODE — Soft Charcoal
+   Token dark ada di ui-core.css
    ============================================ */
-html.dark{
-  --acc:#14B8A6;--acc2:#2DD4BF;--acc-soft:rgba(20,184,166,.15);--acc-text:#5EEAD4;--acc-ring:rgba(20,184,166,.4);
-  --bg:#181B21;--card:#22262E;--border:#2F343D;
-  color-scheme:dark;
-}
-html.dark[data-acc="biru"]{--acc:#60A5FA;--acc2:#93C5FD;--acc-soft:rgba(96,165,250,.15);--acc-text:#93C5FD;--acc-ring:rgba(96,165,250,.4)}
-html.dark[data-acc="violet"]{--acc:#A78BFA;--acc2:#C4B5FD;--acc-soft:rgba(167,139,250,.15);--acc-text:#C4B5FD;--acc-ring:rgba(167,139,250,.4)}
-html.dark[data-acc="amber"]{--acc:#FBBF24;--acc2:#FCD34D;--acc-soft:rgba(251,191,36,.15);--acc-text:#FCD34D;--acc-ring:rgba(251,191,36,.4)}
-html.dark[data-acc="rose"]{--acc:#FB7185;--acc2:#FDA4AF;--acc-soft:rgba(251,113,133,.15);--acc-text:#FDA4AF;--acc-ring:rgba(251,113,133,.4)}
-
 html.dark body{background:var(--bg);color:#E8EBF0}
 html.dark .card{background:var(--card);border-color:var(--border);box-shadow:0 1px 3px rgba(0,0,0,.25)}
 html.dark aside{background:#161A20!important;border-color:#2A2F38!important}
@@ -756,7 +688,6 @@ html.dark .text-blue-600{color:#93C5FD!important}
 html.dark .text-violet-500,html.dark .text-violet-600{color:#C4B5FD!important}
 html.dark .text-sky-600{color:#7DD3FC!important}
 html.dark .text-indigo-500{color:#A5B4FC!important}
-html.dark .skeleton{background:linear-gradient(90deg,#22262E 25%,#2A2F38 50%,#22262E 75%);background-size:800px 100%}
 html.dark .sheet{background:var(--card)}
 html.dark .sheet-drag{background:#3A404A}
 html.dark .search-history-item{color:#D5DAE3;border-color:#2A2F38}
@@ -766,12 +697,8 @@ html.dark .empty-state .es-title{color:#E8EBF0}
 html.dark .empty-state .es-desc{color:#94A0AE}
 html.dark .ctx-menu button{color:#D5DAE3}
 html.dark .ctx-menu button:hover{background:#282D36}
-html.dark .seg-btn{background:#1F232B;color:#A0A8B5;border-color:#2F343D}
-html.dark .seg-btn.on{background:var(--acc);color:#0F1115;border-color:var(--acc)}
 html.dark .filter-chip{background:var(--card);color:#A0A8B5;border-color:var(--border)}
 html.dark .filter-chip.on{background:var(--acc);color:#0F1115;border-color:var(--acc)}
-html.dark .menu-icon-img{background:transparent;box-shadow:0 0 0 1px rgba(255,255,255,.10),0 2px 8px rgba(0,0,0,.4)}
-html.dark :is(a,button):hover .menu-icon-img{box-shadow:0 0 0 1px rgba(255,255,255,.16),0 5px 14px rgba(0,0,0,.5)}
 html.dark .divide-slate-100 > * + *{border-color:#252A33!important}
 html.dark .shadow-md{box-shadow:0 4px 12px rgba(0,0,0,.35)!important}
 html.dark .shadow-lg{box-shadow:0 8px 24px rgba(0,0,0,.4)!important}
@@ -1144,9 +1071,6 @@ html.dark .hero-illustration-v8 img {
   mask-image: radial-gradient(ellipse 78% 78% at 50% 50%, #000 55%, transparent 100%);
   -webkit-mask-image: radial-gradient(ellipse 78% 78% at 50% 50%, #000 55%, transparent 100%);
 }
-
-:root { --ink: #0F172A; }
-html.dark { --ink: #F1F5F9; }
 
 /* ============================================================
    DESKTOP PORTAL
