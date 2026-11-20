@@ -1056,6 +1056,7 @@ function setPageInstant(pg){
     b.classList.remove('acc-soft','acc-text','text-slate-400','text-slate-500');
     b.classList.toggle('nav-active',on);
     b.classList.toggle('nav-inactive',!on);
+    if(on)b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current');
   });
 
   if(pg==='dokumen'){paintDokView();renderDokumen($('inSearchDok')?.value||'');}
@@ -1971,6 +1972,12 @@ function renderQuick(){
    ============================================================ */
 function emptyState(icon,title,desc,cta){
   return `<div class="empty-state"><div class="es-icon"><i data-lucide="${icon}" class="w-6 h-6"></i></div><p class="es-title">${esc(title)}</p><p class="es-desc">${esc(desc)}</p>${cta?`<button onclick="${cta.action}" class="mt-4 acc-bg text-white font-bold px-4 py-2.5 rounded-xl text-xs active:scale-95 transition">${esc(cta.label)}</button>`:''}</div>`;
+}
+function skeletonRows(n=3){
+  return Array.from({length:n},()=>`<div class="skel-row"><span class="skel skel-avatar"></span><span style="flex:1;min-width:0"><span class="skel skel-line"></span><span class="skel skel-line w45"></span></span></div>`).join('');
+}
+function skeletonCards(n=3){
+  return Array.from({length:n},()=>`<div class="spot-slide"><div class="skel-card"><span class="skel" style="display:block;aspect-ratio:16/10;border-radius:12px"></span><span class="skel skel-line" style="width:85%"></span><span class="skel skel-line w45"></span></div></div>`).join('');
 }
 
 /* ============================================================
@@ -5498,6 +5505,8 @@ async function updateNotifBadge(){
   }catch(e){}
 }
 async function renderNotif(){
+  const _nl=$('notifList');
+  if(_nl && !(STATE.notifs||[]).length) _nl.innerHTML = skeletonRows(3);
   let readIds=new Set();
   if(STATE.profile){
     const gid=guruId();
@@ -6866,14 +6875,10 @@ async function renderSpotlight(force){
   const track = $('spotTrack');
   if(!section || !track){ console.warn('[spotlight] DOM tidak ada'); return; }
 
-  if(force && track.children.length){
-    track.style.transition = 'opacity .2s';
-    track.style.opacity = '0.55';
-  }
+  if(!track.children.length || force) track.innerHTML = skeletonCards(3);
 
   try{
     const list = await fetchSpotlight(!!force);
-    if(track) track.style.opacity = '1';
     if(!list.length){
       section.classList.add('hidden');
       return;
@@ -6940,10 +6945,15 @@ function initSpotlightCarousel(){
   if(!slides.length) return;
   const btnPrev = $('spPrev');
   const btnNext = $('spNext');
-  const currEl = $('spCurr');
-  const totalEl = $('spTotal');
+  const dotsEl = $('spotDots');
 
-  if(totalEl) totalEl.textContent = slides.length;
+  if(dotsEl){
+    dotsEl.innerHTML = slides.map((_,i)=>`<button class="spot-dot${i===0?' active':''}" data-i="${i}" aria-label="Slide ${i+1}"></button>`).join('');
+    dotsEl.onclick = e => {
+      const d = e.target.closest('.spot-dot');
+      if(d) go(Number(d.dataset.i));
+    };
+  }
 
   const padLeft = () => parseFloat(getComputedStyle(track).paddingLeft) || 0;
   const maxScroll = () => Math.max(0, track.scrollWidth - track.clientWidth);
@@ -6964,7 +6974,7 @@ function initSpotlightCarousel(){
   const update = () => {
     const i = getIdx();
     track._spIndex = i;
-    if(currEl) currEl.textContent = i + 1;
+    if(dotsEl) dotsEl.querySelectorAll('.spot-dot').forEach((d,di)=>d.classList.toggle('active',di===i));
     // Pakai batas scroll, bukan index===terakhir: slide terakhir tidak selalu
     // bisa sejajar kiri kalau beberapa slide tampil bersamaan (desktop).
     if(btnPrev) btnPrev.disabled = track.scrollLeft <= 1;

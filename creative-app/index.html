@@ -392,9 +392,7 @@ tailwind.config={darkMode:'class',theme:{extend:{fontFamily:{sans:['Inter','sans
             <button class="spot-nav-btn" id="spPrev" aria-label="Sebelumnya" disabled>
               <i data-lucide="arrow-left"></i>
             </button>
-            <div class="spot-nav-counter">
-              <b id="spCurr">1</b> / <span id="spTotal">0</span>
-            </div>
+            <div class="spot-dots" id="spotDots" aria-label="Navigasi slide"></div>
             <button class="spot-nav-btn" id="spNext" aria-label="Selanjutnya">
               <i data-lucide="arrow-right"></i>
             </button>
@@ -408,14 +406,20 @@ tailwind.config={darkMode:'class',theme:{extend:{fontFamily:{sans:['Inter','sans
               <div class="w-title"><i data-lucide="calendar-days"></i> Agenda Terbaru</div>
               <button class="sec-link" onclick="navPage('agenda')">Lihat semua <i data-lucide="arrow-right"></i></button>
             </div>
-            <div id="homeAgendaList"></div>
+            <div id="homeAgendaList">
+              <div class="skel-row"><span class="skel skel-avatar"></span><span style="flex:1;min-width:0"><span class="skel skel-line"></span><span class="skel skel-line w45"></span></span></div>
+              <div class="skel-row"><span class="skel skel-avatar"></span><span style="flex:1;min-width:0"><span class="skel skel-line"></span><span class="skel skel-line w45"></span></span></div>
+            </div>
           </div>
           <div class="w">
             <div class="w-head">
               <div class="w-title"><i data-lucide="folder-open"></i> Dokumen Terbaru</div>
               <button class="sec-link" onclick="navPage('dokumen')">Lihat semua <i data-lucide="arrow-right"></i></button>
             </div>
-            <div id="homeDokList"></div>
+            <div id="homeDokList">
+              <div class="skel-row"><span class="skel skel-avatar"></span><span style="flex:1;min-width:0"><span class="skel skel-line"></span><span class="skel skel-line w45"></span></span></div>
+              <div class="skel-row"><span class="skel skel-avatar"></span><span style="flex:1;min-width:0"><span class="skel skel-line"></span><span class="skel skel-line w45"></span></span></div>
+            </div>
           </div>
         </section>
 
@@ -449,13 +453,8 @@ tailwind.config={darkMode:'class',theme:{extend:{fontFamily:{sans:['Inter','sans
               <button class="sec-link" style="font-size:10px" onclick="openPanel('pNotif')">Lihat semua</button>
             </div>
             <div id="railNotifList">
-              <!-- placeholder, akan diisi JS -->
-              <div class="nt-item">
-                <div class="nt-icon acc-soft acc-text"><i data-lucide="info"></i></div>
-                <div class="nt-body">
-                  <div class="nt-title">Memuat notifikasi…</div>
-                </div>
-              </div>
+              <div class="skel-row"><span class="skel skel-avatar"></span><span style="flex:1;min-width:0"><span class="skel skel-line"></span><span class="skel skel-line w45"></span></span></div>
+              <div class="skel-row"><span class="skel skel-avatar"></span><span style="flex:1;min-width:0"><span class="skel skel-line"></span><span class="skel skel-line w45"></span></span></div>
             </div>
           </div>
 
@@ -949,10 +948,10 @@ tailwind.config={darkMode:'class',theme:{extend:{fontFamily:{sans:['Inter','sans
 
     <!-- BOTTOM NAVBAR -->
     <nav class="app-navbar fixed md:hidden z-40 px-2 py-1.5 flex items-center justify-between">
-      <button data-nav="home" onclick="navPage('home')" aria-label="Beranda" class="nav-btn flex-1 flex flex-col items-center gap-0.5 py-2 rounded-xl nav-active"><i data-lucide="home" class="w-[20px] h-[20px]"></i><span class="text-[9px] font-bold">Beranda</span></button>
-      <button data-nav="apps" onclick="navPage('apps')" aria-label="Layanan" class="nav-btn flex-1 flex flex-col items-center gap-0.5 py-2 rounded-xl nav-inactive"><i data-lucide="layout-grid" class="w-[20px] h-[20px]"></i><span class="text-[9px] font-bold">Layanan</span></button>
-      <button data-nav="bagi" onclick="navPage('bagi')" aria-label="Berbagi" class="nav-btn flex-1 flex flex-col items-center gap-0.5 py-2 rounded-xl nav-inactive"><i data-lucide="share-2" class="w-[20px] h-[20px]"></i><span class="text-[9px] font-bold">Berbagi</span></button>
-      <button data-nav="profile" onclick="navPage('profile')" aria-label="Profil" class="nav-btn flex-1 flex flex-col items-center gap-0.5 py-2 rounded-xl nav-inactive"><i data-lucide="user" class="w-[20px] h-[20px]"></i><span class="text-[9px] font-bold">Profil</span></button>
+      <button data-nav="home" onclick="navPage('home')" aria-label="Beranda" class="nav-btn flex-1 flex flex-col items-center gap-0.5 py-2 rounded-xl nav-active"><i data-lucide="home" class="w-[20px] h-[20px]"></i><span class="text-[10px] font-bold">Beranda</span></button>
+      <button data-nav="apps" onclick="navPage('apps')" aria-label="Layanan" class="nav-btn flex-1 flex flex-col items-center gap-0.5 py-2 rounded-xl nav-inactive"><i data-lucide="layout-grid" class="w-[20px] h-[20px]"></i><span class="text-[10px] font-bold">Layanan</span></button>
+      <button data-nav="bagi" onclick="navPage('bagi')" aria-label="Berbagi" class="nav-btn flex-1 flex flex-col items-center gap-0.5 py-2 rounded-xl nav-inactive"><i data-lucide="share-2" class="w-[20px] h-[20px]"></i><span class="text-[10px] font-bold">Berbagi</span></button>
+      <button data-nav="profile" onclick="navPage('profile')" aria-label="Profil" class="nav-btn flex-1 flex flex-col items-center gap-0.5 py-2 rounded-xl nav-inactive"><i data-lucide="user" class="w-[20px] h-[20px]"></i><span class="text-[10px] font-bold">Profil</span></button>
     </nav>
   </div>
 
