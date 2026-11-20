@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "io.github.slg_timkreatif.twa",
+      "sha256_cert_fingerprints": [
+        "F0:35:55:6D:84:D7:43:EE:88:E1:4B:2C:B8:28:F8:AB:8B:95:F2:81:B9:90:81:A6:03:18:96:E6:17:43:48:9F"
+      ]
+    }
+  }
+]
