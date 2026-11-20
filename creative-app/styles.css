@@ -2616,20 +2616,6 @@ html.dark .spot-nav-btn{background:#22262E;border-color:#2F343D}
 .hero-card-v8[data-mode="banner"]{
   padding-bottom:18px;
 }
-@media (min-width:1024px){
-  .hero-card-v8[data-mode="banner"]{
-    padding:28px;
-    min-height:auto;
-  }
-  .hero-card-v8[data-mode="banner"] .hero-banner-title{
-    max-width:36ch;
-    padding-right:0;
-    font-size:26px;
-  }
-  .hero-card-v8[data-mode="banner"] .hero-banner-img{
-    max-width:520px;
-  }
-}
 
 .hero-banner-img{
   width:100%;
@@ -3105,21 +3091,6 @@ html.dark .notif-title{color:#F1F5F9}
     grid-column:2;
     margin-top:0;
     justify-self:start;
-  }
-
-  /* Reorder grid supaya image span 2 rows */
-  #heroBannerMode .hero-banner-img{
-    grid-row:1 / span 3;
-    grid-column:1;
-  }
-  #heroBannerMode .hero-banner-title{
-    grid-row:1;
-  }
-  #heroBannerMode .hero-banner-meta{
-    grid-row:2;
-  }
-  #heroBannerMode .hero-banner-cta{
-    grid-row:3;
   }
 }
 /* ============================================

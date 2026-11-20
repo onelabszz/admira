@@ -525,6 +525,7 @@ function markAcc(){
     b.classList.toggle('ring-2',on);
     b.classList.toggle('ring-white',on);
     b.classList.toggle('scale-110',on);
+    b.setAttribute('aria-pressed',on?'true':'false');
   });
 }
 function setFs(){
@@ -549,7 +550,7 @@ function paintThemeMode(){
   const cur=getThemeMode();
   ['auto','light','dark'].forEach(v=>{
     const b=$('themeMode'+v.charAt(0).toUpperCase()+v.slice(1));
-    if(b)b.classList.toggle('on',v===cur);
+    if(b){b.classList.toggle('on',v===cur);b.setAttribute('aria-pressed',v===cur?'true':'false');}
   });
 }
 function setThemeMode(mode){
@@ -579,6 +580,7 @@ function paintToggles(){
   [['tglFs',fs],['tglAnim',an]].forEach(([id,on])=>{
     const b=$(id);if(!b)return;
     b.className='w-12 h-7 rounded-full relative transition '+(on?'acc-bg':'bg-slate-200');
+    b.setAttribute('aria-checked',on?'true':'false');
     b.firstElementChild.className='absolute top-1 w-5 h-5 bg-white rounded-full transition '+(on?'left-6':'left-1');
   });
 }
@@ -688,13 +690,25 @@ function resetTheme(){
   },'Reset Tema?','Reset');
 }
 function paintCustomizeUI() {
-  document.querySelectorAll('[data-navstyle]').forEach(b => b.classList.toggle('on', b.dataset.navstyle === document.body.dataset.navbar));
-  document.querySelectorAll('[data-navcolor]').forEach(b => b.classList.toggle('on', b.dataset.navcolor === document.body.dataset.navbarColor));
-  document.querySelectorAll('[data-navmode]').forEach(b => b.classList.toggle('on', b.dataset.navmode === (document.body.dataset.navmode || 'bottom')));
-  document.querySelectorAll('[data-density]').forEach(b => b.classList.toggle('on', b.dataset.density === document.body.dataset.density));
-  document.querySelectorAll('[data-iconstyle]').forEach(b => b.classList.toggle('on', b.dataset.iconstyle === (document.body.dataset.iconstyle || 'default')));
+  const setSeg = (key, getCur) => {
+    const cur = getCur();
+    document.querySelectorAll('[data-' + key + ']').forEach(b => {
+      const on = b.dataset[key] === cur;
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  };
+  setSeg('navstyle', () => document.body.dataset.navbar);
+  setSeg('navcolor', () => document.body.dataset.navbarColor);
+  setSeg('navmode', () => document.body.dataset.navmode || 'bottom');
+  setSeg('density', () => document.body.dataset.density);
+  setSeg('iconstyle', () => document.body.dataset.iconstyle || 'default');
   const ap = localStorage.getItem('gb_preset');
-  document.querySelectorAll('[data-preset]').forEach(b => b.classList.toggle('on', b.dataset.preset === ap));
+  document.querySelectorAll('[data-preset]').forEach(b => {
+    const on = b.dataset.preset === ap;
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
   paintPresetUI();
 }
 function setIconStyle(v){
