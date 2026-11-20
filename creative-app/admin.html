@@ -190,20 +190,20 @@
     <nav class="flex-1 flex flex-col gap-1 p-3 overflow-y-auto no-scroll" id="navDesktop"></nav>
     <div class="p-5 border-t border-slate-100 space-y-3">
       <div class="flex items-center gap-2">
-        <button id="btnDark" onclick="toggleDark()" aria-label="Dark mode" class="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center active:scale-90 transition">
+        <button id="btnDark" onclick="toggleDark()" aria-label="Dark mode" class="ui-btn ui-btn-ghost ui-btn-icon active:scale-90 transition">
           <i data-lucide="moon" class="w-4 h-4 text-slate-600"></i>
         </button>
-        <button onclick="openAksenPicker()" aria-label="Warna aksen" class="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center active:scale-90 transition">
+        <button onclick="openAksenPicker()" aria-label="Warna aksen" class="ui-btn ui-btn-ghost ui-btn-icon active:scale-90 transition">
           <i data-lucide="palette" class="w-4 h-4 text-slate-600"></i>
         </button>
-        <button onclick="toggleDebug()" aria-label="Debug" class="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center active:scale-90 transition">
+        <button onclick="toggleDebug()" aria-label="Debug" class="ui-btn ui-btn-ghost ui-btn-icon active:scale-90 transition">
           <i data-lucide="bug" class="w-4 h-4 text-slate-600"></i>
         </button>
         <div class="flex-1 min-w-0 text-right">
           <p id="adminEmail" class="text-[10px] font-bold text-slate-500 truncate">—</p>
         </div>
       </div>
-      <button onclick="konfirmasiLogout()" class="w-full bg-rose-50 text-rose-600 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 active:scale-[.98] transition">
+      <button onclick="konfirmasiLogout()" class="ui-btn ui-btn-danger w-full py-2.5">
         <i data-lucide="log-out" class="w-3.5 h-3.5"></i> Keluar
       </button>
     </div>
@@ -223,7 +223,7 @@
         <span id="syncDot" class="sync-dot"></span>
         <span id="syncText" class="text-[9px] font-mono font-semibold text-slate-500">Synced</span>
       </div>
-      <button id="btnDarkMobile" onclick="toggleDark()" aria-label="Dark" class="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center active:scale-90 transition shrink-0">
+      <button id="btnDarkMobile" onclick="toggleDark()" aria-label="Dark" class="ui-btn ui-btn-ghost ui-btn-icon active:scale-90 transition shrink-0">
         <i data-lucide="moon" class="w-4 h-4"></i>
       </button>
     </div>
@@ -235,7 +235,7 @@
         <span id="syncDotDesktop" class="sync-dot"></span>
         <span id="syncTextDesktop" class="text-[10px] font-mono font-semibold text-slate-500">Synced</span>
       </div>
-      <button onclick="exportData()" aria-label="Export" title="Export JSON" class="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center active:scale-90 transition">
+      <button onclick="exportData()" aria-label="Export" title="Export JSON" class="ui-btn ui-btn-ghost ui-btn-icon active:scale-90 transition">
         <i data-lucide="download" class="w-4 h-4"></i>
       </button>
     </div>
@@ -254,7 +254,7 @@
               <p id="drawerEmail" class="text-[10px] text-slate-400 truncate">—</p>
             </div>
           </div>
-          <button onclick="closeDrawer()" aria-label="Tutup" class="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center shrink-0">
+          <button onclick="closeDrawer()" aria-label="Tutup" class="ui-btn ui-btn-ghost ui-btn-icon shrink-0">
             <i data-lucide="x" class="w-4 h-4"></i>
           </button>
         </div>
@@ -263,7 +263,7 @@
           <button onclick="toggleDebug()" class="w-full py-2.5 rounded-xl bg-slate-100 text-slate-600 text-xs font-bold flex items-center justify-center gap-2 active:scale-[.98]">
             <i data-lucide="bug" class="w-3.5 h-3.5"></i> Debug Panel
           </button>
-          <button onclick="konfirmasiLogout()" class="w-full py-2.5 rounded-xl bg-rose-50 text-rose-600 text-xs font-bold flex items-center justify-center gap-2 active:scale-[.98]">
+          <button onclick="konfirmasiLogout()" class="ui-btn ui-btn-danger w-full py-2.5">
             <i data-lucide="log-out" class="w-3.5 h-3.5"></i> Keluar
           </button>
         </div>
@@ -798,7 +798,7 @@
 <div id="mMenu" class="modal" role="dialog" aria-modal="true" aria-labelledby="eTitle"><div class="modal-box no-scroll p-6 space-y-3">
   <div class="flex items-center justify-between">
     <p class="text-base font-extrabold text-slate-800" id="eTitle">Editor Menu</p>
-    <button onclick="closeModal('mMenu')" aria-label="Tutup" class="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center">
+    <button onclick="closeModal('mMenu')" aria-label="Tutup" class="ui-btn ui-btn-ghost ui-btn-icon">
       <i data-lucide="x" class="w-4 h-4"></i>
     </button>
   </div>
@@ -905,7 +905,7 @@
   </label>
   <div class="flex gap-2 pt-3 border-t border-slate-100">
     <button onclick="saveMenu()" class="flex-1 acc-bg text-white font-bold py-3 rounded-xl text-sm active:scale-95 transition shadow-sm">Simpan</button>
-    <button id="eDelete" onclick="delMenu()" class="hidden bg-rose-50 text-rose-600 font-bold px-4 rounded-xl text-sm active:scale-95 transition">Hapus</button>
+    <button id="eDelete" onclick="delMenu()" class="ui-btn ui-btn-danger hidden px-4">Hapus</button>
     <button onclick="closeModal('mMenu')" class="bg-slate-100 text-slate-700 px-4 rounded-xl text-sm active:scale-95 transition">Tutup</button>
   </div>
 </div></div>
@@ -914,7 +914,7 @@
 <div id="mAgenda" class="modal" role="dialog" aria-modal="true" aria-labelledby="aTitle"><div class="modal-box no-scroll p-6 space-y-3">
   <div class="flex items-center justify-between">
     <p class="text-base font-extrabold text-slate-800" id="aTitle">Editor Agenda</p>
-    <button onclick="closeModal('mAgenda')" aria-label="Tutup" class="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center"><i data-lucide="x" class="w-4 h-4"></i></button>
+    <button onclick="closeModal('mAgenda')" aria-label="Tutup" class="ui-btn ui-btn-ghost ui-btn-icon"><i data-lucide="x" class="w-4 h-4"></i></button>
   </div>
   <div><label class="lbl">Judul</label><input id="aJudul" class="inp acc-ring"></div>
   <div><label class="lbl">Deskripsi</label><textarea id="aDesk" rows="2" class="inp acc-ring"></textarea></div>
@@ -932,7 +932,7 @@
   </label>
   <div class="flex gap-2 pt-3 border-t border-slate-100">
     <button onclick="saveAgenda()" class="flex-1 acc-bg text-white font-bold py-3 rounded-xl text-sm active:scale-95 transition shadow-sm">Simpan</button>
-    <button id="aDelete" onclick="delAgenda()" class="hidden bg-rose-50 text-rose-600 font-bold px-4 rounded-xl text-sm active:scale-95 transition">Hapus</button>
+    <button id="aDelete" onclick="delAgenda()" class="ui-btn ui-btn-danger hidden px-4">Hapus</button>
     <button onclick="closeModal('mAgenda')" class="bg-slate-100 text-slate-700 px-4 rounded-xl text-sm active:scale-95 transition">Tutup</button>
   </div>
 </div></div>
@@ -941,7 +941,7 @@
 <div id="mDoc" class="modal" role="dialog" aria-modal="true" aria-labelledby="docTitle"><div class="modal-box no-scroll p-6 space-y-3">
   <div class="flex items-center justify-between">
     <p class="text-base font-extrabold text-slate-800" id="docTitle">Editor Dokumen</p>
-    <button onclick="closeModal('mDoc')" aria-label="Tutup" class="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center"><i data-lucide="x" class="w-4 h-4"></i></button>
+    <button onclick="closeModal('mDoc')" aria-label="Tutup" class="ui-btn ui-btn-ghost ui-btn-icon"><i data-lucide="x" class="w-4 h-4"></i></button>
   </div>
   <div><label class="lbl">Judul</label><input id="docJudul" class="inp acc-ring"></div>
   <div><label class="lbl">Deskripsi</label><input id="docDesk" class="inp acc-ring"></div>
@@ -968,14 +968,14 @@
   </label>
   <div class="flex gap-2 pt-3 border-t border-slate-100">
     <button onclick="saveDoc()" class="flex-1 acc-bg text-white font-bold py-3 rounded-xl text-sm active:scale-95 transition shadow-sm">Simpan</button>
-    <button id="docDelete" onclick="delDoc()" class="hidden bg-rose-50 text-rose-600 font-bold px-4 rounded-xl text-sm active:scale-95 transition">Hapus</button>
+    <button id="docDelete" onclick="delDoc()" class="ui-btn ui-btn-danger hidden px-4">Hapus</button>
     <button onclick="closeModal('mDoc')" class="bg-slate-100 text-slate-700 px-4 rounded-xl text-sm active:scale-95 transition">Tutup</button>
   </div>
 </div></div>
 
 <!-- ============ MODAL: CONFIRM ============ -->
 <div id="mConfirm" class="modal" role="dialog" aria-modal="true" aria-labelledby="cfTitle" aria-describedby="cfMsg"><div class="modal-box p-6 text-center relative" style="max-width:20rem">
-  <button onclick="cfCancel()" aria-label="Tutup" class="absolute top-3 right-3 w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center active:scale-90 transition">
+  <button onclick="cfCancel()" aria-label="Tutup" class="absolute top-3 right-3 ui-btn ui-btn-ghost ui-btn-icon active:scale-90 transition">
     <i data-lucide="x" class="w-4 h-4 text-slate-500"></i>
   </button>
   <div class="w-14 h-14 mx-auto rounded-2xl bg-rose-50 text-rose-500 flex items-center justify-center mb-3">
@@ -993,7 +993,7 @@
 <div id="mAksen" class="modal" role="dialog" aria-modal="true" aria-labelledby="aksenTitle"><div class="modal-box p-6 space-y-4 relative" style="max-width:22rem">
   <div class="flex items-center justify-between">
     <p id="aksenTitle" class="text-base font-extrabold text-slate-800">Warna Aksen</p>
-    <button onclick="closeModal('mAksen')" aria-label="Tutup" class="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center active:scale-90 transition">
+    <button onclick="closeModal('mAksen')" aria-label="Tutup" class="ui-btn ui-btn-ghost ui-btn-icon active:scale-90 transition">
       <i data-lucide="x" class="w-4 h-4 text-slate-500"></i>
     </button>
   </div>
@@ -1720,7 +1720,7 @@ function editSchoolAdmin(npsn){
     <div class="space-y-4">
       <div class="flex items-center justify-between">
         <p class="text-base font-extrabold text-slate-800">Edit Sekolah</p>
-        <button onclick="closeModal('mPop')" class="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center">
+        <button onclick="closeModal('mPop')" class="ui-btn ui-btn-ghost ui-btn-icon">
           <i data-lucide="x" class="w-4 h-4 text-slate-500"></i>
         </button>
       </div>
@@ -1791,7 +1791,7 @@ function viewSchoolLogoAdmin(npsn){
     <div class="space-y-3">
       <div class="flex items-center justify-between">
         <p class="text-base font-extrabold text-slate-800">Logo Sekolah</p>
-        <button onclick="closeModal('mPop')" class="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center">
+        <button onclick="closeModal('mPop')" class="ui-btn ui-btn-ghost ui-btn-icon">
           <i data-lucide="x" class="w-4 h-4 text-slate-500"></i>
         </button>
       </div>
@@ -2201,7 +2201,7 @@ function renderDocsAdmin(){
         <p class="text-xs font-extrabold text-slate-800 truncate">${esc(d.judul)} ${!d.is_active?'<span class="text-[8px] bg-slate-200 text-slate-500 px-1.5 py-0.5 rounded font-black">NONAKTIF</span>':''}</p>
         <p class="text-[10px] text-slate-500 truncate">${esc(d.kategori||'Umum')}</p>
       </div>
-      <a href="${esc(d.link)}" target="_blank" rel="noopener" aria-label="Buka" class="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center shrink-0"><i data-lucide="external-link" class="w-4 h-4"></i></a>
+      <a href="${esc(d.link)}" target="_blank" rel="noopener" aria-label="Buka" class="ui-btn ui-btn-ghost ui-btn-icon shrink-0"><i data-lucide="external-link" class="w-4 h-4"></i></a>
       <button onclick="openDocEditor(${d.id})" aria-label="Edit" class="acc-soft acc-text w-9 h-9 rounded-xl flex items-center justify-center shrink-0 active:scale-90"><i data-lucide="pencil" class="w-4 h-4"></i></button>
     </div>`;
   }).join('')||'<p class="text-xs text-slate-400 text-center py-6">Belum ada dokumen.</p>';
@@ -2367,7 +2367,7 @@ function viewGuruProfile(gid){
     <div class="space-y-4">
       <div class="flex items-center justify-between">
         <p class="text-base font-extrabold text-slate-800">Profil Guru</p>
-        <button onclick="closeModal('mPop')" class="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center">
+        <button onclick="closeModal('mPop')" class="ui-btn ui-btn-ghost ui-btn-icon">
           <i data-lucide="x" class="w-4 h-4 text-slate-500"></i>
         </button>
       </div>
@@ -2766,7 +2766,7 @@ function renderFooter(){
         <p class="text-xs font-extrabold text-slate-800 truncate">${esc(f.judul)}</p>
         <p class="text-[10px] text-slate-500 truncate">${esc(f.url)}</p>
       </div>
-      <a href="${esc(f.url)}" target="_blank" rel="noopener" aria-label="Buka" class="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center shrink-0"><i data-lucide="external-link" class="w-4 h-4"></i></a>
+      <a href="${esc(f.url)}" target="_blank" rel="noopener" aria-label="Buka" class="ui-btn ui-btn-ghost ui-btn-icon shrink-0"><i data-lucide="external-link" class="w-4 h-4"></i></a>
       <button onclick="delFooter(${f.id})" aria-label="Hapus" class="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0 active:scale-90"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
     </div>`).join('')||'<p class="text-xs text-slate-400 text-center py-6">Belum ada footer.</p>';
   icons();
