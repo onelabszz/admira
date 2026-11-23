@@ -1,5 +1,5 @@
 import { db } from '../db.js';
-import { esc, fmtDate } from '../lib.js';
+import { esc } from '../lib.js';
 import { icon } from '../lib-icons.js';
 import { confirmDialog } from '../lib-confirm.js';
 import { toast } from '../lib-toast.js';
@@ -27,7 +27,7 @@ export async function renderStaff(main) {
   const q = main.querySelector('#q');
 
   async function refresh() {
-    const all = await db.staff.reverse().sortBy('createdAt');
+    const all = await db.staff.orderBy('createdAt').reverse().toArray();
     const term = q.value.trim().toLowerCase();
     const rows = all.filter(s =>
       !term || [s.name, s.nip, s.jabatan, s.status, s.waliKelas].some(v => (v || '').toLowerCase().includes(term))
@@ -99,6 +99,7 @@ export async function renderStaff(main) {
   function openForm(existing) {
     const s = existing || {};
     dlg.innerHTML = `
+      <button type="button" class="modal-close" data-close aria-label="Tutup">${icon('X', { size: 18 })}</button>
       <form method="dialog" class="form" style="max-height:88vh;overflow-y:auto">
         <h2>${existing ? 'Ubah' : 'Tambah'} Data Pegawai</h2>
         <label>Nama Lengkap <input name="name" value="${esc(s.name || '')}" required></label>
@@ -140,7 +141,7 @@ export async function renderStaff(main) {
       </form>
     `;
     dlg.showModal();
-    dlg.querySelector('[data-close]').addEventListener('click', () => dlg.close());
+    dlg.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => dlg.close()));
 
     dlg.querySelector('form').addEventListener('submit', async e => {
       e.preventDefault();

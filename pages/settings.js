@@ -1,6 +1,6 @@
 import JSZip from 'https://esm.sh/jszip@3.10.1';
 import { db, getSetting, setSetting } from '../db.js';
-import { esc, download } from '../lib.js';
+import { esc, download, currentAcademicYear, toISODate } from '../lib.js';
 import { icon } from '../lib-icons.js';
 import { toast } from '../lib-toast.js';
 import { confirmDialog } from '../lib-confirm.js';
@@ -8,6 +8,16 @@ import { confirmDialog } from '../lib-confirm.js';
 export async function renderSettings(main) {
   const ws = await getSetting('workspace', {});
   const lastBackup = await getSetting('last_backup_at');
+
+  // Selalu baca workspace terbaru dari database agar perubahan yang baru
+  // disimpan (nama sekolah, NIP, kop) tidak tertimpa oleh upload logo/TTD.
+  async function updateWorkspace(patch = {}, removeKeys = []) {
+    const current = await getSetting('workspace', {});
+    const next = { ...current, ...patch };
+    for (const key of removeKeys) delete next[key];
+    await setSetting('workspace', next);
+    return next;
+  }
 
   main.innerHTML = `
     <div class="page-head"><h1>Pengaturan</h1></div>
@@ -26,25 +36,50 @@ export async function renderSettings(main) {
         <h3 style="margin-top:16px">Kepala Sekolah</h3>
         <label>Nama Kepala Sekolah <input name="headmaster" value="${esc(ws.headmaster || '')}"></label>
         <label>NIP Kepala Sekolah <input name="headmasterNip" value="${esc(ws.headmasterNip || '')}"></label>
+        <label>Pangkat/Golongan Kepala Sekolah <input name="headmasterRank" value="${esc(ws.headmasterRank || '')}" placeholder="mis. Penata Muda Tk.I / III b"></label>
+        <label>Tahun Ajaran Aktif <input name="academicYear" value="${esc(ws.academicYear || currentAcademicYear())}" placeholder="mis. 2026/2027"></label>
 
-        <h3 style="margin-top:16px">Logo Sekolah</h3>
-        <div style="display:flex;gap:12px;align-items:center;margin-bottom:8px">
-          ${ws.logoDataUrl
-            ? `<img src="${ws.logoDataUrl}" alt="logo" style="width:72px;height:72px;object-fit:contain;border:1px solid #E5E7EB;border-radius:8px">`
-            : '<span class="muted">Belum ada logo</span>'}
+        <h3 style="margin-top:16px">Kop Surat</h3>
+        <label>Baris 1 (Instansi Atas) <input name="kopLine1" value="${esc(ws.kopLine1 || '')}" placeholder="PEMERINTAH KABUPATEN ..."></label>
+        <label>Baris 2 (Dinas) <input name="kopLine2" value="${esc(ws.kopLine2 || '')}" placeholder="DINAS PENDIDIKAN DAN KEBUDAYAAN"></label>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
+          <div>
+            <h4 style="margin:0 0 8px">Logo Kiri</h4>
+            ${ws.logoDataUrl
+              ? `<img src="${ws.logoDataUrl}" alt="logo" style="width:60px;height:60px;object-fit:contain;border:1px solid #E5E7EB;border-radius:8px;margin-bottom:8px">`
+              : '<div style="height:60px;display:flex;align-items:center" class="muted">Belum ada</div>'}
+            <input type="file" id="logo-file" accept="image/png,image/jpeg,image/svg+xml" style="font-size:12px">
+            ${ws.logoDataUrl ? `<button type="button" class="btn sm danger" id="logo-del" style="margin-top:4px">Hapus</button>` : ''}
+          </div>
+          <div>
+            <h4 style="margin:0 0 8px">Logo Kanan</h4>
+            ${ws.logoRightDataUrl
+              ? `<img src="${ws.logoRightDataUrl}" alt="logo" style="width:60px;height:60px;object-fit:contain;border:1px solid #E5E7EB;border-radius:8px;margin-bottom:8px">`
+              : '<div style="height:60px;display:flex;align-items:center" class="muted">Belum ada</div>'}
+            <input type="file" id="logo-right-file" accept="image/png,image/jpeg,image/svg+xml" style="font-size:12px">
+            ${ws.logoRightDataUrl ? `<button type="button" class="btn sm danger" id="logo-right-del" style="margin-top:4px">Hapus</button>` : ''}
+          </div>
         </div>
-        <label>Unggah Logo <input type="file" id="logo-file" accept="image/png,image/jpeg,image/svg+xml"></label>
-        ${ws.logoDataUrl ? `<button type="button" class="btn sm danger" id="logo-del">Hapus logo</button>` : ''}
 
-        <h3 style="margin-top:16px">Tanda Tangan</h3>
+        <h3 style="margin-top:24px">Tanda Tangan & Cap</h3>
         <div style="display:flex;gap:12px;align-items:center;margin-bottom:8px">
           ${ws.signatureDataUrl
             ? `<img src="${ws.signatureDataUrl}" alt="ttd" style="max-height:80px;border:1px solid #E5E7EB;border-radius:8px;background:#fff;padding:4px">`
             : '<span class="muted">Belum ada tanda tangan</span>'}
         </div>
-        <label>Unggah Tanda Tangan <small class="muted">(PNG transparan disarankan)</small>
+        <label>Unggah Tanda Tangan <small class="muted">(PNG transparan)</small>
           <input type="file" id="sig-file" accept="image/png,image/jpeg"></label>
         ${ws.signatureDataUrl ? `<button type="button" class="btn sm danger" id="sig-del">Hapus tanda tangan</button>` : ''}
+
+        <div style="display:flex;gap:12px;align-items:center;margin-top:12px;margin-bottom:8px">
+          ${ws.stampDataUrl
+            ? `<img src="${ws.stampDataUrl}" alt="cap" style="width:72px;height:72px;object-fit:contain;border:1px solid #E5E7EB;border-radius:8px;background:#fff">`
+            : '<span class="muted">Belum ada cap</span>'}
+        </div>
+        <label>Unggah Cap Sekolah <small class="muted">(PNG transparan)</small>
+          <input type="file" id="stamp-file" accept="image/png"></label>
+        ${ws.stampDataUrl ? `<button type="button" class="btn sm danger" id="stamp-del">Hapus cap</button>` : ''}
 
         <div class="form-actions" style="margin-top:16px">
           <button class="btn primary" type="submit">${icon('Save', { size: 16 })} Simpan Pengaturan</button>
@@ -67,8 +102,7 @@ export async function renderSettings(main) {
   main.querySelector('#ws-form').addEventListener('submit', async e => {
     e.preventDefault();
     const fd = new FormData(e.target);
-    const updated = { ...ws, ...Object.fromEntries(fd.entries()) };
-    await setSetting('workspace', updated);
+    await updateWorkspace(Object.fromEntries(fd.entries()));
     toast.success('Pengaturan tersimpan.');
   });
 
@@ -77,15 +111,44 @@ export async function renderSettings(main) {
     const f = e.target.files[0];
     if (!f) return;
     const dataUrl = await fileToDataUrl(f);
-    await setSetting('workspace', { ...ws, logoDataUrl: dataUrl });
-    renderSettings(main);
+    await updateWorkspace({ logoDataUrl: dataUrl });
+    await renderSettings(main);
   });
 
   const logoDel = main.querySelector('#logo-del');
   if (logoDel) logoDel.addEventListener('click', async () => {
-    const w = { ...ws }; delete w.logoDataUrl;
-    await setSetting('workspace', w);
-    renderSettings(main);
+    await updateWorkspace({}, ['logoDataUrl']);
+    await renderSettings(main);
+  });
+
+  // Logo Kanan
+  main.querySelector('#logo-right-file').addEventListener('change', async e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const dataUrl = await fileToDataUrl(f);
+    await updateWorkspace({ logoRightDataUrl: dataUrl });
+    await renderSettings(main);
+  });
+
+  const logoRightDel = main.querySelector('#logo-right-del');
+  if (logoRightDel) logoRightDel.addEventListener('click', async () => {
+    await updateWorkspace({}, ['logoRightDataUrl']);
+    await renderSettings(main);
+  });
+
+  // Cap Sekolah
+  main.querySelector('#stamp-file').addEventListener('change', async e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const dataUrl = await fileToDataUrl(f);
+    await updateWorkspace({ stampDataUrl: dataUrl });
+    await renderSettings(main);
+  });
+
+  const stampDel = main.querySelector('#stamp-del');
+  if (stampDel) stampDel.addEventListener('click', async () => {
+    await updateWorkspace({}, ['stampDataUrl']);
+    await renderSettings(main);
   });
 
   // Tanda tangan upload
@@ -93,15 +156,14 @@ export async function renderSettings(main) {
     const f = e.target.files[0];
     if (!f) return;
     const dataUrl = await fileToDataUrl(f);
-    await setSetting('workspace', { ...ws, signatureDataUrl: dataUrl });
-    renderSettings(main);
+    await updateWorkspace({ signatureDataUrl: dataUrl });
+    await renderSettings(main);
   });
 
   const sigDel = main.querySelector('#sig-del');
   if (sigDel) sigDel.addEventListener('click', async () => {
-    const w = { ...ws }; delete w.signatureDataUrl;
-    await setSetting('workspace', w);
-    renderSettings(main);
+    await updateWorkspace({}, ['signatureDataUrl']);
+    await renderSettings(main);
   });
 
   // Backup
@@ -124,8 +186,7 @@ export async function renderSettings(main) {
     }, null, 2));
 
     const blob = await zip.generateAsync({ type: 'blob' });
-    const date = new Date().toISOString().slice(0, 10);
-    download(blob, `admira-backup-${date}.admira`);
+    download(blob, `admira-backup-${toISODate()}.admira`);
     await setSetting('last_backup_at', Date.now());
     window.__admira?.updateBackupStatus?.();
   });

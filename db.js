@@ -1,88 +1,141 @@
 import Dexie from 'https://esm.sh/dexie@4.0.8';
+import { DEFAULT_TEMPLATES, DEFAULT_WA_TEMPLATES } from './templates.js';
 
 export const DB_NAME = 'admira_v1';
 export const db = new Dexie(DB_NAME);
 
-db.version(1).stores({
-  settings: 'key',
-  letters: '++id, type, date, number, subject, createdAt',
-  letter_numbering: 'id',
-  meetings: '++id, date, createdAt',
-  tasks: '++id, status, dueDate, meetingId',
-  attachments: '++id, letterId',
+// Skema dasar. Versi berikutnya hanya menambahkan tabel lewat `base({...})`.
+function base(extra = {}) {
+  return {
+    settings: 'key',
+    letters: '++id, type, date, number, subject, createdAt',
+    letter_numbering: 'id',
+    meetings: '++id, date, createdAt',
+    tasks: '++id, status, dueDate, meetingId',
+    attachments: '++id, letterId',
+    ...extra,
+  };
+}
+
+const LETTER_TEMPLATES = '++id, name, category';
+const WA_TEMPLATES = '++id, name, category';
+const DISPOSITIONS = '++id, letterId, status, createdAt';
+const STAFF = '++id, name, nip, jabatan, status, createdAt';
+const STUDENTS = '++id, name, nisn, nis, kelas, status, createdAt';
+
+// Riwayat versi dipertahankan agar database lama tetap bisa di-upgrade.
+db.version(1).stores(base());
+
+db.version(2).stores(base({
+  letter_templates: LETTER_TEMPLATES,
+  dispositions: DISPOSITIONS,
+}));
+
+db.version(3).stores(base({
+  letter_templates: LETTER_TEMPLATES,
+  dispositions: DISPOSITIONS,
+  staff: STAFF,
+  students: STUDENTS,
+}));
+
+// V4-V6: perubahan isi template, bukan struktur tabel.
+db.version(4).stores(base({
+  letter_templates: LETTER_TEMPLATES,
+  dispositions: DISPOSITIONS,
+  staff: STAFF,
+  students: STUDENTS,
+}));
+
+db.version(5).stores(base({
+  letter_templates: LETTER_TEMPLATES,
+  dispositions: DISPOSITIONS,
+  staff: STAFF,
+  students: STUDENTS,
+}));
+
+db.version(6).stores(base({
+  letter_templates: LETTER_TEMPLATES,
+  dispositions: DISPOSITIONS,
+  staff: STAFF,
+  students: STUDENTS,
+})).upgrade(async tx => {
+  // Jangan hapus template buatan pengguna: hanya isi jika masih kosong.
+  const templates = tx.table('letter_templates');
+  if (await templates.count() === 0) {
+    await templates.bulkAdd(DEFAULT_TEMPLATES.map(t => ({ ...t })));
+  }
 });
 
-db.version(2).stores({
-  settings: 'key',
-  letters: '++id, type, date, number, subject, createdAt',
-  letter_numbering: 'id',
-  letter_templates: '++id, name, category',
-  dispositions: '++id, letterId, status, createdAt',
-  meetings: '++id, date, createdAt',
-  tasks: '++id, status, dueDate, meetingId',
-  attachments: '++id, letterId',
-}).upgrade(async tx => {
-  await tx.table('letter_templates').bulkAdd([
-    {
-      name: 'Surat Tugas',
-      category: 'internal',
-      body: `Yang bertanda tangan di bawah ini, Kepala {{sekolah}}, dengan ini menugaskan kepada:
+db.version(7).stores(base({
+  letter_templates: LETTER_TEMPLATES,
+  dispositions: DISPOSITIONS,
+  staff: STAFF,
+  students: STUDENTS,
+  wa_templates: WA_TEMPLATES,
+}));
 
-Nama          : {{nama}}
-NIP           : {{nip}}
-Jabatan       : {{jabatan}}
+// Penanda versi seed: template bawaan baru ditambahkan sekali, sehingga
+// template yang sengaja dihapus pengguna tidak muncul lagi setiap boot.
+const LETTER_SEED_VERSION = 2;
+const LETTER_BASIS_VERSION = 1;
+const WA_SEED_VERSION = 1;
+const WA_BUILTIN_VERSION = 1;
 
-Untuk melaksanakan tugas {{keperluan}} pada:
+async function seedMissing(table, defaults) {
+  const existing = await table.toArray();
+  const names = new Set(existing.map(t => t.name));
+  const missing = defaults.filter(t => !names.has(t.name));
+  if (!missing.length) return 0;
+  const now = Date.now();
+  await table.bulkAdd(missing.map((t, i) => ({ ...t, createdAt: now + i })));
+  return missing.length;
+}
 
-Hari/Tanggal  : {{tanggal}}
-Tempat        : {{tempat}}
+/**
+ * Pastikan template surat bawaan tersedia. Dipanggil saat boot agar instalasi
+ * baru (database dibuat langsung di versi terakhir, tanpa upgrade) tetap punya
+ * template, dan database lama mendapat template tambahan tanpa duplikasi.
+ */
+export async function ensureLetterTemplates() {
+  const row = await db.settings.get('letter_templates_seed');
+  if ((row?.value || 0) < LETTER_SEED_VERSION) {
+    await seedMissing(db.letter_templates, DEFAULT_TEMPLATES);
+    await db.settings.put({ key: 'letter_templates_seed', value: LETTER_SEED_VERSION });
+  }
 
-Demikian surat tugas ini dibuat untuk dilaksanakan dengan penuh tanggung jawab.`,
-    },
-    {
-      name: 'Surat Undangan',
-      category: 'internal',
-      body: `Dengan hormat,
+  // Database lama bisa sudah punya template bawaan tanpa kolom `basis`.
+  // Lengkapi dasar hukumnya tanpa menimpa isi yang mungkin sudah diubah.
+  const basisRow = await db.settings.get('letter_templates_basis');
+  if ((basisRow?.value || 0) >= LETTER_BASIS_VERSION) return;
+  for (const t of DEFAULT_TEMPLATES) {
+    const rows = await db.letter_templates.where('name').equals(t.name).toArray();
+    for (const r of rows) {
+      if (!Array.isArray(r.basis) || !r.basis.length) {
+        await db.letter_templates.update(r.id, { basis: t.basis });
+      }
+    }
+  }
+  await db.settings.put({ key: 'letter_templates_basis', value: LETTER_BASIS_VERSION });
+}
 
-Sehubungan dengan {{keperluan}}, kami mengundang Bapak/Ibu untuk hadir pada:
+export async function ensureWaTemplates() {
+  const row = await db.settings.get('wa_templates_seed');
+  if ((row?.value || 0) < WA_SEED_VERSION) {
+    await seedMissing(db.wa_templates, DEFAULT_WA_TEMPLATES);
+    await db.settings.put({ key: 'wa_templates_seed', value: WA_SEED_VERSION });
+  }
 
-Hari/Tanggal  : {{tanggal}}
-Waktu         : {{waktu}}
-Tempat        : {{tempat}}
-Acara         : {{keperluan}}
-
-Mengingat pentingnya acara tersebut, kami mengharapkan kehadiran Bapak/Ibu tepat pada waktunya.
-
-Demikian undangan ini kami sampaikan, atas perhatian dan kerja samanya kami ucapkan terima kasih.`,
-    },
-    {
-      name: 'Surat Keterangan',
-      category: 'internal',
-      body: `Yang bertanda tangan di bawah ini, Kepala {{sekolah}}, dengan ini menerangkan bahwa:
-
-Nama          : {{nama}}
-NIP/NISN      : {{nip}}
-Jabatan       : {{jabatan}}
-
-Adalah benar yang bersangkutan {{keperluan}}.
-
-Demikian surat keterangan ini dibuat dengan sebenarnya, untuk dapat dipergunakan sebagaimana mestinya.`,
-    },
-  ]);
-});
-
-db.version(3).stores({
-  settings: 'key',
-  letters: '++id, type, date, number, subject, createdAt',
-  letter_numbering: 'id',
-  letter_templates: '++id, name, category',
-  dispositions: '++id, letterId, status, createdAt',
-  meetings: '++id, date, createdAt',
-  tasks: '++id, status, dueDate, meetingId',
-  attachments: '++id, letterId',
-  staff: '++id, name, nip, jabatan, status, createdAt',
-  students: '++id, name, nisn, nis, kelas, status, createdAt',
-});
+  const builtInRow = await db.settings.get('wa_templates_builtIn');
+  if ((builtInRow?.value || 0) >= WA_BUILTIN_VERSION) return;
+  const defaultNames = new Set(DEFAULT_WA_TEMPLATES.map(t => t.name));
+  const rows = await db.wa_templates.toArray();
+  for (const r of rows) {
+    if (defaultNames.has(r.name) && r.builtIn !== true) {
+      await db.wa_templates.update(r.id, { builtIn: true });
+    }
+  }
+  await db.settings.put({ key: 'wa_templates_builtIn', value: WA_BUILTIN_VERSION });
+}
 
 export async function getSetting(key, def = null) {
   const row = await db.settings.get(key);

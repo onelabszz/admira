@@ -1,8 +1,12 @@
+import { parseDateValue } from './lib.js';
+
 export function formatDateId(d) {
   if (!d) return '-';
+  const date = parseDateValue(d);
+  if (!date) return String(d);
   try {
-    return new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
-  } catch { return d; }
+    return date.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+  } catch { return String(d); }
 }
 
 function escapeHtml(s) {
@@ -11,60 +15,101 @@ function escapeHtml(s) {
   })[c]);
 }
 
-export function buildPrintHtml({ workspace, letter, body, signatureDataUrl }) {
+export function buildPrintHtml({ workspace, letter, body, signatureMode = 'ttd' }) {
   const ws = workspace || {};
+  const showTtd = signatureMode === 'ttd' || signatureMode === 'ttd-stamp';
+  const showStamp = signatureMode === 'ttd-stamp';
+
   return `<!doctype html>
 <html lang="id"><head>
 <meta charset="utf-8">
 <title>${escapeHtml(letter.number || 'Surat')}</title>
 <style>
   @page { size: A4; margin: 2cm 2cm 2cm 2.5cm; }
-  body { font-family: 'Times New Roman', 'Liberation Serif', serif; font-size: 12pt; color: #000; line-height: 1.55; margin: 0; }
-  .kop { display: flex; align-items: center; gap: 18px; border-bottom: 3px double #000; padding-bottom: 10px; margin-bottom: 20px; }
-  .kop .logo { width: 85px; height: 85px; object-fit: contain; flex-shrink: 0; }
-  .kop .text { flex: 1; text-align: center; }
-  .kop .text h1 { margin: 0; font-size: 15pt; text-transform: uppercase; letter-spacing: .5px; }
-  .kop .text h2 { margin: 2px 0; font-size: 11pt; font-weight: normal; }
-  .kop .text p { margin: 2px 0; font-size: 9.5pt; }
-  .meta { display: grid; grid-template-columns: 1fr 1fr; margin-bottom: 8px; font-size: 11pt; }
-  .meta .left div { margin: 1px 0; }
-  .title { text-align: center; margin: 18px 0 16px; }
-  .title h3 { margin: 0; font-size: 13pt; text-transform: uppercase; text-decoration: underline; letter-spacing: .5px; }
-  .body { text-align: justify; white-space: pre-wrap; }
-  .signature { margin-top: 40px; display: flex; justify-content: flex-end; }
-  .signature .block { text-align: center; min-width: 220px; }
-  .signature .block .stamp { height: 90px; display: flex; align-items: center; justify-content: center; margin: 6px 0; }
-  .signature .block .stamp img { max-height: 90px; max-width: 180px; }
-  .signature .block .name { font-weight: bold; text-decoration: underline; margin-top: 4px; }
-  .signature .block .nip { font-size: 11pt; }
+  body { font-family: 'Times New Roman', Times, serif; font-size: 11.5pt; color: #000; line-height: 1.4; margin: 0; padding: 0; }
+  
+  /* Kop Surat (Grid 3 Kolom) */
+  .kop { display: grid; grid-template-columns: 80px 1fr 80px; align-items: center; border-bottom: 3px solid #000; padding-bottom: 6px; margin-bottom: 16px; }
+  .kop-logo-left, .kop-logo-right { width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; }
+  .kop-logo-left img, .kop-logo-right img { max-width: 100%; max-height: 100%; object-fit: contain; }
+  .kop-text { text-align: center; padding: 0 10px; }
+  .kop-line-1 { font-size: 12pt; text-transform: uppercase; margin-bottom: 2px; }
+  .kop-line-2 { font-size: 14pt; font-weight: bold; text-transform: uppercase; margin-bottom: 2px; }
+  .kop-line-3 { font-size: 16pt; font-weight: bold; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.5px; }
+  .kop-line-4 { font-size: 9pt; margin-bottom: 1px; }
+  .kop-line-5 { font-size: 9pt; margin-bottom: 0; }
+  
+  /* Meta Surat */
+  .meta { display: table; width: 100%; margin-bottom: 20px; font-size: 11.5pt; }
+  .meta .col { display: table-cell; width: 50%; vertical-align: top; }
+  .meta .col div { margin: 2px 0; }
+  
+  /* Body / Isi */
+  .body { text-align: justify; min-height: 400px; } /* Mendorong TTD ke bawah */
+  .body p { margin: 0 0 10px 0; }
+  .body table { border-collapse: collapse; margin-bottom: 10px; }
+  .body td { padding: 2px 6px 2px 0; vertical-align: top; }
+  
+  /* Tanda Tangan */
+  .signature { margin-top: 20px; display: flex; justify-content: flex-end; page-break-inside: avoid; }
+  .signature .block { text-align: center; min-width: 250px; }
+  .signature .stamp { 
+    height: 70px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    margin: 2px 0; 
+    position: relative; 
+  }
+  .signature .stamp .cap { 
+    position: absolute; 
+    height: 90px; 
+    opacity: 0.85; 
+    z-index: 1; 
+    left: 10px;
+    top: -15px;
+  }
+  .signature .stamp .ttd { 
+    max-height: 70px; 
+    max-width: 160px; 
+    position: relative; 
+    z-index: 2; 
+  }
+  .signature .name { font-weight: bold; text-decoration: underline; margin-top: 4px; }
+  .signature .nip { font-size: 11.5pt; }
 </style>
 </head><body>
   <div class="kop">
-    ${ws.logoDataUrl ? `<img class="logo" src="${ws.logoDataUrl}" alt="logo">` : ''}
-    <div class="text">
-      <h1>${escapeHtml(ws.name || 'Nama Sekolah')}</h1>
-      <p>${escapeHtml(ws.address || 'Alamat sekolah')}</p>
-      <p>${[ws.npsn ? `NPSN: ${escapeHtml(ws.npsn)}` : '', escapeHtml(ws.contact || '')].filter(Boolean).join(' • ')}</p>
+    <div class="kop-logo-left">${ws.logoDataUrl ? `<img src="${ws.logoDataUrl}" alt="Logo Kiri">` : ''}</div>
+    <div class="kop-text">
+      <div class="kop-line-1">${escapeHtml(ws.kopLine1 || 'PEMERINTAH KABUPATEN ...')}</div>
+      <div class="kop-line-2">${escapeHtml(ws.kopLine2 || 'DINAS PENDIDIKAN DAN KEBUDAYAAN')}</div>
+      <div class="kop-line-3">${escapeHtml(ws.name || 'NAMA SEKOLAH')}</div>
+      <div class="kop-line-4">${escapeHtml(ws.address || 'Alamat sekolah lengkap')}</div>
+      <div class="kop-line-5">${[ws.contact ? `${escapeHtml(ws.contact)}` : '', ws.npsn ? `NPSN: ${escapeHtml(ws.npsn)}` : ''].filter(Boolean).join(' • ')}</div>
     </div>
+    <div class="kop-logo-right">${ws.logoRightDataUrl ? `<img src="${ws.logoRightDataUrl}" alt="Logo Kanan">` : ''}</div>
   </div>
 
   <div class="meta">
-    <div class="left">
+    <div class="col">
       <div>Nomor&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: ${escapeHtml(letter.number || '-')}</div>
       <div>Lampiran : -</div>
       <div>Perihal&nbsp;&nbsp;&nbsp;: ${escapeHtml(letter.subject || '-')}</div>
     </div>
+    <div class="col"></div>
   </div>
 
-  <div class="title"><h3>${escapeHtml(letter.subject || '')}</h3></div>
-
-  <div class="body">${escapeHtml(body)}</div>
+  <div class="body">${body}</div>
 
   <div class="signature">
     <div class="block">
       <div>${escapeHtml(ws.city || '')}${ws.city ? ', ' : ''}${formatDateId(letter.date)}</div>
       <div>Kepala ${escapeHtml(ws.name || 'Sekolah')}</div>
-      <div class="stamp">${signatureDataUrl ? `<img src="${signatureDataUrl}" alt="ttd">` : ''}</div>
+      <div class="stamp">
+        ${showStamp && ws.stampDataUrl ? `<img class="cap" src="${ws.stampDataUrl}" alt="cap">` : ''}
+        ${showTtd && ws.signatureDataUrl ? `<img class="ttd" src="${ws.signatureDataUrl}" alt="ttd">` : ''}
+      </div>
       <div class="name">${escapeHtml(ws.headmaster || '_________________')}</div>
       <div class="nip">NIP. ${escapeHtml(ws.headmasterNip || '_________________')}</div>
     </div>

@@ -1,27 +1,22 @@
-import { db, getSetting, setSetting } from './db.js';
+import { db, getSetting, setSetting, ensureLetterTemplates, ensureWaTemplates } from './db.js';
 import { esc, fmtDate, today } from './lib.js';
 import { icon } from './lib-icons.js';
-
-const routes = {
-  '': 'dashboard',
-  'letters/in': 'letters',
-  'letters/out': 'letters',
-  'meetings': 'meetings-tasks',
-  'tasks': 'meetings-tasks',
-  'reports': 'reports',
-  'settings': 'settings',
-};
 
 let cleanup = null;
 
 async function boot() {
+  registerServiceWorker();
   const ws = await getSetting('workspace');
   const app = document.getElementById('app');
   if (!ws) return renderOnboarding(app);
+  try {
+    await Promise.all([ensureLetterTemplates(), ensureWaTemplates()]);
+  } catch (err) {
+    console.warn('Template bawaan gagal dimuat:', err);
+  }
   renderShell(app, ws);
   window.addEventListener('hashchange', route);
   route();
-  registerServiceWorker();
 }
 
 function getInitials(name) {
@@ -69,6 +64,7 @@ function renderShell(app, ws) {
       <div class="nav-section">Administrasi</div>
       <a href="#/letters/in" data-r="letters-in">${icon('Inbox', { size: 17 })}<span>Surat Masuk</span></a>
       <a href="#/letters/out" data-r="letters-out">${icon('Send', { size: 17 })}<span>Surat Keluar</span></a>
+      <a href="#/wa" data-r="wa">${icon('Megaphone', { size: 17 })}<span>Pengumuman WA</span></a>
       <a href="#/meetings" data-r="meetings">${icon('Users', { size: 17 })}<span>Rapat</span></a>
       <a href="#/tasks" data-r="tasks">${icon('SquareCheck', { size: 17 })}<span>Tugas</span></a>
       <div class="nav-section">Data</div>
@@ -174,6 +170,9 @@ async function route() {
       const { renderLetters } = await import('./pages/letters.js');
       const type = hash.endsWith('/out') ? 'out' : 'in';
       cleanup = await renderLetters(main, type);
+    } else if (section === 'wa') {
+      const { renderWaTemplates } = await import('./pages/wa.js');
+      cleanup = await renderWaTemplates(main);
     } else if (section === 'meetings' || section === 'tasks') {
       const { renderMeetingsTasks } = await import('./pages/meetings-tasks.js');
       cleanup = await renderMeetingsTasks(main, section);
@@ -226,7 +225,7 @@ async function renderDashboard(main) {
     getSetting('last_backup_at'),
   ]);
 
-  const nextTasks = await db.tasks.where('status').notEqual('done').reverse().sortBy('dueDate');
+  const nextTasks = await db.tasks.where('status').notEqual('done').sortBy('dueDate');
 
   const daysSinceBackup = lastBackup ? Math.floor((Date.now() - lastBackup) / 86400000) : null;
   const needBackup = !lastBackup || daysSinceBackup > 7;

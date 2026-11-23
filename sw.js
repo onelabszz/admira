@@ -1,10 +1,10 @@
-const CACHE = 'admira-v12';
+const CACHE = 'admira-v21';
 const ASSETS = [
   './', './index.html', './styles.css',
   './lib.js', './lib-print.js', './lib-icons.js',
   './lib-toast.js', './lib-confirm.js',
-  './db.js', './app.js',
-  './pages/letters.js', './pages/meetings-tasks.js',
+  './db.js', './templates.js', './app.js',
+  './pages/letters.js', './pages/wa.js', './pages/meetings-tasks.js',
   './pages/reports.js', './pages/settings.js',
   './pages/staff.js', './pages/students.js',
   './manifest.webmanifest', './icons/icon.svg',
@@ -12,7 +12,7 @@ const ASSETS = [
 const CDN = [
   'https://esm.sh/dexie@4.0.8',
   'https://esm.sh/jszip@3.10.1',
-  'https://cdn.jsdelivr.net/npm/lucide@0.451.0/dist/esm/lucide.js',
+  'https://cdn.jsdelivr.net/npm/lucide@0.451.0/+esm',
 ];
 
 self.addEventListener('install', e => {

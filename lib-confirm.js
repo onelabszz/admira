@@ -13,6 +13,7 @@ export function confirmDialog({
     dlg.className = 'confirm-dialog';
     const iName = iconName || (danger ? 'TriangleAlert' : 'Info');
     dlg.innerHTML = `
+      <button type="button" class="modal-close" data-act="cancel" aria-label="Tutup">${icon('X', { size: 18 })}</button>
       <div class="confirm-body">
         <div class="confirm-icon ${danger ? 'danger' : ''}">${icon(iName, { size: 22 })}</div>
         <h2 class="confirm-title">${title}</h2>
@@ -34,7 +35,7 @@ export function confirmDialog({
       resolve(result);
     };
 
-    dlg.querySelector('[data-act="cancel"]').addEventListener('click', () => close(false));
+    dlg.querySelectorAll('[data-act="cancel"]').forEach(btn => btn.addEventListener('click', () => close(false)));
     dlg.querySelector('[data-act="confirm"]').addEventListener('click', () => close(true));
     dlg.addEventListener('cancel', e => { e.preventDefault(); close(false); });
     dlg.addEventListener('click', e => { if (e.target === dlg) close(false); });

@@ -52,7 +52,7 @@ export async function renderStudents(main) {
   const q = main.querySelector('#q');
 
   async function refresh() {
-    const all = await db.students.reverse().sortBy('createdAt');
+    const all = await db.students.orderBy('createdAt').reverse().toArray();
     const term = q.value.trim().toLowerCase();
     const rows = all.filter(s =>
       !term || [s.name, s.nisn, s.nis, s.kelas].some(v => (v || '').toLowerCase().includes(term))
@@ -121,6 +121,7 @@ export async function renderStudents(main) {
   function openForm(existing) {
     const s = existing || {};
     dlg.innerHTML = `
+      <button type="button" class="modal-close" data-close aria-label="Tutup">${icon('X', { size: 18 })}</button>
       <form method="dialog" class="form" style="max-height:88vh;overflow-y:auto">
         <h2>${existing ? 'Ubah' : 'Tambah'} Data Siswa</h2>
         <label>Nama Lengkap <input name="name" value="${esc(s.name || '')}" required></label>
@@ -151,7 +152,7 @@ export async function renderStudents(main) {
       </form>
     `;
     dlg.showModal();
-    dlg.querySelector('[data-close]').addEventListener('click', () => dlg.close());
+    dlg.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => dlg.close()));
 
     dlg.querySelector('form').addEventListener('submit', async e => {
       e.preventDefault();
@@ -185,6 +186,7 @@ export async function renderStudents(main) {
 
   function openImport() {
     dlgImport.innerHTML = `
+      <button type="button" class="modal-close" data-close aria-label="Tutup">${icon('X', { size: 18 })}</button>
       <div class="form" style="max-height:88vh;overflow-y:auto">
         <h2>Impor Data Siswa</h2>
         <p class="muted" style="margin:0 0 16px;line-height:1.6">
@@ -217,7 +219,7 @@ export async function renderStudents(main) {
       </div>
     `;
     dlgImport.showModal();
-    dlgImport.querySelector('[data-close]').addEventListener('click', () => dlgImport.close());
+    dlgImport.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => dlgImport.close()));
 
     dlgImport.querySelector('#btn-template').addEventListener('click', () => {
       const csv = '\uFEFF' + toCSV(CSV_HEADERS, CSV_SAMPLE);

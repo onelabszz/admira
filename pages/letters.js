@@ -1,8 +1,41 @@
-import { db, peekNextLetterNumber, bumpLetterNumber, saveAttachment } from '../db.js';
-import { esc, fmtDate, today } from '../lib.js';
+import { db, peekNextLetterNumber, bumpLetterNumber, saveAttachment, getAttachments, deleteAttachment } from '../db.js';
+import { esc, fmtDate, today, download, parseDateValue, currentAcademicYear } from '../lib.js';
 import { buildPrintHtml, printHtml, formatDateId } from '../lib-print.js';
 import { icon } from '../lib-icons.js';
 import { confirmDialog } from '../lib-confirm.js';
+import { toast } from '../lib-toast.js';
+
+const TEMPLATE_LABELS = {
+  keperluan: 'Keperluan / Acara',
+  tempat: 'Tempat',
+  waktu: 'Waktu',
+  nama: 'Nama',
+  nip: 'NIP',
+  jabatan: 'Jabatan',
+  agenda: 'Agenda',
+  acara: 'Nama Kegiatan',
+  tugas: 'Uraian Tugas',
+  materi: 'Materi',
+  jumlah: 'Jumlah',
+  keterangan: 'Keterangan',
+  tanggal_mulai: 'Tanggal Mulai',
+  tanggal_selesai: 'Tanggal Selesai',
+  nama_orang_tua: 'Nama Orang Tua/Wali',
+  alasan: 'Alasan',
+  sekolah_tujuan: 'Sekolah Tujuan',
+  dokumen: 'Dokumen yang Dikirim',
+  tujuan_rekomendasi: 'Tujuan Rekomendasi',
+  uraian: 'Uraian Belanja',
+  jumlah_biaya: 'Jumlah Biaya',
+  sumber_dana: 'Sumber Dana',
+};
+
+function fmtBytes(n) {
+  if (n === null || n === undefined) return '';
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${Math.round(n / 1024)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 export async function renderLetters(main, type) {
   const isIn = type === 'in';
@@ -26,7 +59,8 @@ export async function renderLetters(main, type) {
   const q = main.querySelector('#q');
 
   async function refresh() {
-    const all = await db.letters.where('type').equals(type).reverse().sortBy('createdAt');
+    const all = await db.letters.where('type').equals(type).sortBy('createdAt');
+    all.reverse();
     const term = q.value.trim().toLowerCase();
     const rows = all.filter(l =>
       !term || [l.number, l.subject, l.sender, l.recipient]
@@ -38,9 +72,13 @@ export async function renderLetters(main, type) {
       return;
     }
 
+    const ids = rows.map(r => r.id);
+    const attCounts = {};
+    const attachments = await db.attachments.where('letterId').anyOf(ids).toArray();
+    for (const a of attachments) attCounts[a.letterId] = (attCounts[a.letterId] || 0) + 1;
+
     let dispCounts = {};
     if (isIn) {
-      const ids = rows.map(r => r.id);
       const disps = await db.dispositions.where('letterId').anyOf(ids).toArray();
       for (const d of disps) {
         if (d.status !== 'done') dispCounts[d.letterId] = (dispCounts[d.letterId] || 0) + 1;
@@ -74,6 +112,7 @@ export async function renderLetters(main, type) {
                 ${isIn
                   ? `<button class="btn sm" data-act="disp" data-id="${l.id}">${icon('MessageSquare', { size: 13 })} Disposisi</button>`
                   : `<button class="btn sm primary" data-act="print" data-id="${l.id}">${icon('Printer', { size: 13 })} Cetak</button>`}
+                <button class="btn sm" data-act="att" data-id="${l.id}" title="Lampiran">${icon('Paperclip', { size: 13 })} Lampiran${attCounts[l.id] ? ` (${attCounts[l.id]})` : ''}</button>
                 <button class="btn sm" data-act="edit" data-id="${l.id}">${icon('PenLine', { size: 13 })} Ubah</button>
                 <button class="btn sm danger" data-act="del" data-id="${l.id}">${icon('Trash2', { size: 13 })} Hapus</button>
               </td>
@@ -108,17 +147,51 @@ export async function renderLetters(main, type) {
         await db.dispositions.where('letterId').equals(id).delete();
       });
       refresh();
+    } else if (act === 'att') {
+      const l = await db.letters.get(id);
+      openAttachments(l);
     } else if (act === 'edit') {
       const l = await db.letters.get(id);
       openForm(l);
     } else if (act === 'print') {
       const l = await db.letters.get(id);
-      printHtml(buildPrintHtml({
-        workspace: ws,
-        letter: l,
-        body: l.body || '',
-        signatureDataUrl: ws.signatureDataUrl || null,
-      }));
+      
+      // Tampilkan dialog pilihan TTD
+      dlg.innerHTML = `
+        <button type="button" class="modal-close" data-close aria-label="Tutup">${icon('X', { size: 18 })}</button>
+        <div class="form" style="text-align:center">
+          <h2>Pilih Model Tanda Tangan</h2>
+          <p class="muted" style="margin-bottom:20px">Pilih bagaimana surat ini akan dicetak.</p>
+          
+          <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px">
+            <button class="btn" data-mode="none">Tanpa TTD & Cap</button>
+            <button class="btn primary" data-mode="ttd">TTD Saja</button>
+            <button class="btn primary" data-mode="ttd-stamp">TTD + Cap Sekolah</button>
+          </div>
+          
+          <div class="form-actions" style="justify-content:center;border:none;padding:0;margin:20px 0 0;background:transparent">
+            <button type="button" class="btn" data-close>Batal</button>
+          </div>
+        </div>
+      `;
+      dlg.showModal();
+      dlg.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => dlg.close()));
+      
+      dlg.querySelectorAll('button[data-mode]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const mode = btn.dataset.mode;
+          dlg.close();
+          setTimeout(() => {
+            printHtml(buildPrintHtml({
+              workspace: ws,
+              letter: l,
+              body: l.body || '',
+              signatureMode: mode
+            }));
+          }, 200);
+        });
+      });
+
     } else if (act === 'disp') {
       const l = await db.letters.get(id);
       openDispositions(l);
@@ -128,12 +201,15 @@ export async function renderLetters(main, type) {
   async function openForm(existing) {
     const l = existing || {};
     const templates = isIn ? [] : await db.letter_templates.toArray();
+    let studentsPromise = null;
+    const loadStudents = () => (studentsPromise ||= db.students.orderBy('name').toArray());
     let suggestedNumber = l.number || '';
     if (!existing && !isIn) {
       suggestedNumber = await peekNextLetterNumber(type, new Date().getFullYear());
     }
 
     dlg.innerHTML = `
+      <button type="button" class="modal-close" data-close aria-label="Tutup">${icon('X', { size: 18 })}</button>
       <form method="dialog" class="form" style="max-height:85vh;overflow-y:auto">
         <h2>${existing ? 'Ubah' : 'Tambah'} ${title}</h2>
         ${!existing && !isIn ? `
@@ -143,6 +219,7 @@ export async function renderLetters(main, type) {
               ${templates.map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join('')}
             </select>
           </label>
+          <div id="tpl-vars"></div>
         ` : ''}
         <label>Tanggal <input type="date" name="date" value="${l.date || today()}" required></label>
         <label>Nomor Surat <input type="text" name="number" value="${esc(suggestedNumber)}" required></label>
@@ -176,20 +253,127 @@ export async function renderLetters(main, type) {
 
     const tplSel = dlg.querySelector('select[name="_template"]');
     if (tplSel) {
-      tplSel.addEventListener('change', async () => {
-        if (!tplSel.value) return;
-        const t = await db.letter_templates.get(Number(tplSel.value));
-        if (!t) return;
-        const dateVal = dlg.querySelector('input[name="date"]').value;
-        const numVal = dlg.querySelector('input[name="number"]').value;
+      const panel = dlg.querySelector('#tpl-vars');
+      const form = dlg.querySelector('form');
+      const fieldValue = name => form.querySelector(`[name="${name}"]`)?.value || '';
+      let activeTemplate = null;
+
+      const buildCtx = async () => {
+        const dateVal = fieldValue('date') || today();
+        const date = parseDateValue(dateVal) || new Date();
         const ctx = {
           sekolah: ws.name || '',
           kepala: ws.headmaster || '',
+          nip_kepala: ws.headmasterNip || '',
+          pangkat_kepala: ws.headmasterRank || '',
+          tahun_ajaran: ws.academicYear || currentAcademicYear(dateVal),
           tanggal: formatDateId(dateVal),
-          nomor: numVal,
+          tanggal_surat: `${ws.city || 'Kota'}, ${formatDateId(dateVal)}`,
+          nomor: fieldValue('number'),
+          perihal: fieldValue('subject'),
+          tujuan: fieldValue('recipient'),
+          hari: date.toLocaleDateString('id-ID', { weekday: 'long' }),
+          dasar_hukum: (activeTemplate?.basis || []).map(b => `<li>${esc(b)}</li>`).join(''),
         };
-        const filled = t.body.replace(/\{\{(\w+)\}\}/g, (_, k) => ctx[k] ?? `{{${k}}}`);
-        dlg.querySelector('textarea[name="body"]').value = filled;
+
+        const studentId = Number(panel?.querySelector('#tpl-student')?.value || 0);
+        if (studentId) {
+          const students = await loadStudents();
+          const student = students.find(s => s.id === studentId);
+          if (student) {
+            Object.assign(ctx, {
+              nama_siswa: student.name || '',
+              ttl_siswa: [student.birthPlace, student.birthDate ? formatDateId(student.birthDate) : '']
+                .filter(Boolean).join(', '),
+              jk_siswa: student.gender === 'L' ? 'Laki-laki' : student.gender === 'P' ? 'Perempuan' : '',
+              nis_siswa: student.nis || '',
+              nisn_siswa: student.nisn || '',
+              kelas_siswa: student.kelas || '',
+            });
+          }
+        }
+
+        panel?.querySelectorAll('[data-var]').forEach(input => {
+          ctx[input.dataset.var] = input.value;
+        });
+        return ctx;
+      };
+
+      const applyTemplate = async () => {
+        if (!activeTemplate) return;
+        const ctx = await buildCtx();
+        form.querySelector('textarea[name="body"]').value =
+          activeTemplate.body.replace(/\{\{(\w+)\}\}/g, (raw, key) => (key in ctx ? ctx[key] : raw));
+      };
+
+      // Selama isi surat belum diedit manual, ikuti perubahan nomor/perihal/tujuan.
+      let bodyTouched = false;
+      form.querySelector('textarea[name="body"]')?.addEventListener('input', () => { bodyTouched = true; });
+      ['date', 'number', 'subject', 'recipient'].forEach(name => {
+        form.querySelector(`[name="${name}"]`)?.addEventListener('input', () => {
+          if (!bodyTouched) applyTemplate();
+        });
+      });
+
+      tplSel.addEventListener('change', async () => {
+        if (!tplSel.value) {
+          activeTemplate = null;
+          panel.innerHTML = '';
+          return;
+        }
+        const template = await db.letter_templates.get(Number(tplSel.value));
+        if (!template) return;
+        activeTemplate = template;
+
+        const keys = [...new Set([...template.body.matchAll(/\{\{(\w+)\}\}/g)].map(m => m[1]))];
+        const auto = new Set([
+          'sekolah', 'kepala', 'nip_kepala', 'pangkat_kepala', 'tahun_ajaran',
+          'tanggal', 'tanggal_surat', 'nomor', 'perihal', 'tujuan', 'hari',
+          'dasar_hukum',
+        ]);
+        const studentKeys = keys.filter(k => k.endsWith('_siswa'));
+        const manualKeys = keys.filter(k => !auto.has(k) && !k.endsWith('_siswa'));
+
+        let studentOptions = '';
+        if (studentKeys.length) {
+          const students = await loadStudents();
+          studentOptions = students.length
+            ? students.map(s => `<option value="${s.id}">${esc(s.name)} — ${esc(s.kelas || '-')}</option>`).join('')
+            : '<option value="">Belum ada data siswa</option>';
+        }
+
+        panel.innerHTML = `
+          <div style="border-top:1px solid var(--border);margin-top:14px;padding-top:12px">
+            <h3 style="margin-bottom:8px">Variabel Template</h3>
+            ${activeTemplate.basis?.length ? `
+              <div style="background:#F8FAFC;border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:12px">
+                <strong style="font-size:12.5px">Dasar hukum</strong>
+                <ul style="margin:6px 0 0 16px;padding:0;font-size:12.5px" class="muted">
+                  ${activeTemplate.basis.map(b => `<li style="margin-bottom:3px">${esc(b)}</li>`).join('')}
+                </ul>
+                <div class="muted" style="font-size:11px;margin-top:6px">Rujukan umum. Sesuaikan dengan peraturan daerah/instansi sebelum digunakan resmi.</div>
+              </div>
+            ` : ''}
+            ${studentKeys.length ? `
+              <label>Data Siswa <small class="muted">(mengisi ${studentKeys.join(', ')})</small>
+                <select id="tpl-student">
+                  <option value="">— Pilih siswa —</option>
+                  ${studentOptions}
+                </select>
+              </label>` : ''}
+            ${manualKeys.map(k => `
+              <label>${TEMPLATE_LABELS[k] || k.replace(/_/g, ' ')}
+                <input data-var="${k}" placeholder="{{${k}}}">
+              </label>`).join('')}
+            <div class="form-actions" style="border:none;padding:0;margin-top:4px">
+              <button type="button" class="btn sm" id="tpl-apply">${icon('RotateCcw', { size: 13 })} Perbarui Isi Surat</button>
+            </div>
+          </div>
+        `;
+        panel.querySelector('#tpl-apply').addEventListener('click', applyTemplate);
+        const studentSel = panel.querySelector('#tpl-student');
+        if (studentSel) studentSel.addEventListener('change', applyTemplate);
+        await applyTemplate();
       });
     }
 
@@ -224,8 +408,10 @@ export async function renderLetters(main, type) {
   }
 
   async function openDispositions(letter) {
-    const all = await db.dispositions.where('letterId').equals(letter.id).reverse().sortBy('createdAt');
+    const all = await db.dispositions.where('letterId').equals(letter.id).sortBy('createdAt');
+    all.reverse();
     dlg.innerHTML = `
+      <button type="button" class="modal-close" data-close aria-label="Tutup">${icon('X', { size: 18 })}</button>
       <div class="form" style="max-height:85vh;overflow-y:auto">
         <h2>Disposisi</h2>
         <p class="muted" style="margin:0 0 12px">${esc(letter.subject)} — ${esc(letter.number)}</p>
@@ -308,6 +494,70 @@ export async function renderLetters(main, type) {
       if (!ok) return;
       await db.dispositions.delete(Number(b.dataset.deld));
       openDispositions(letter);
+      refresh();
+    }));
+  }
+
+  async function openAttachments(letter) {
+    const files = await getAttachments(letter.id);
+    dlg.innerHTML = `
+      <button type="button" class="modal-close" data-close aria-label="Tutup">${icon('X', { size: 18 })}</button>
+      <div class="form" style="max-height:85vh;overflow-y:auto">
+        <h2>Lampiran</h2>
+        <p class="muted" style="margin:0 0 12px">${esc(letter.subject || '')} — ${esc(letter.number || '')}</p>
+        <div id="att-list">
+          ${files.length ? files.map(a => `
+            <div class="card" style="margin-bottom:8px;padding:10px">
+              <div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline">
+                <strong style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(a.name)}</strong>
+                <span class="muted" style="font-size:12px;flex-shrink:0">${fmtBytes(a.size)}</span>
+              </div>
+              <div class="muted" style="font-size:12px;margin-top:2px">Diunggah ${fmtDate(a.createdAt)}</div>
+              <div style="text-align:right;margin-top:6px">
+                <button class="btn sm" data-dl="${a.id}">${icon('Download', { size: 13 })} Unduh</button>
+                <button class="btn sm danger" data-delatt="${a.id}">${icon('Trash2', { size: 13 })} Hapus</button>
+              </div>
+            </div>
+          `).join('') : '<p class="muted">Belum ada lampiran.</p>'}
+        </div>
+        <label>Unggah Lampiran <input type="file" id="att-file"></label>
+        <div class="form-actions">
+          <button type="button" class="btn primary" id="att-upload">${icon('Upload', { size: 16 })} Unggah</button>
+          <button type="button" class="btn" data-close>Tutup</button>
+        </div>
+      </div>
+    `;
+    dlg.showModal();
+    dlg.querySelector('[data-close]').addEventListener('click', () => dlg.close());
+
+    dlg.querySelector('#att-upload').addEventListener('click', async () => {
+      const file = dlg.querySelector('#att-file').files?.[0];
+      if (!file) {
+        toast.warn('Pilih file terlebih dahulu.');
+        return;
+      }
+      await saveAttachment(letter.id, file);
+      toast.success('Lampiran diunggah.');
+      await openAttachments(letter);
+      refresh();
+    });
+
+    dlg.querySelectorAll('[data-dl]').forEach(btn => btn.addEventListener('click', () => {
+      const file = files.find(f => f.id === Number(btn.dataset.dl));
+      if (file) download(file.blob, file.name);
+    }));
+
+    dlg.querySelectorAll('[data-delatt]').forEach(btn => btn.addEventListener('click', async () => {
+      const ok = await confirmDialog({
+        title: 'Hapus lampiran ini?',
+        message: 'File akan dihapus permanen dari perangkat ini.',
+        confirmText: 'Hapus',
+        danger: true,
+      });
+      if (!ok) return;
+      await deleteAttachment(Number(btn.dataset.delatt));
+      toast.success('Lampiran dihapus.');
+      await openAttachments(letter);
       refresh();
     }));
   }
