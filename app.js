@@ -1,6 +1,7 @@
-import { db, getSetting, setSetting, ensureLetterTemplates, ensureWaTemplates } from './db.js';
-import { esc, fmtDate, today } from './lib.js';
+import { db, getSetting, ensureLetterTemplates, ensureWaTemplates, ensureKspData } from './db.js';
+import { esc, fmtDate, today, currentAcademicYear } from './lib.js';
 import { icon } from './lib-icons.js';
+import { saveSchoolProfile } from './school-profile.js';
 
 let cleanup = null;
 
@@ -10,7 +11,7 @@ async function boot() {
   const app = document.getElementById('app');
   if (!ws) return renderOnboarding(app);
   try {
-    await Promise.all([ensureLetterTemplates(), ensureWaTemplates()]);
+    await Promise.all([ensureLetterTemplates(), ensureWaTemplates(), ensureKspData()]);
   } catch (err) {
     console.warn('Template bawaan gagal dimuat:', err);
   }
@@ -61,6 +62,7 @@ function renderShell(app, ws) {
       </div>
       <div class="nav-section">Utama</div>
       <a href="#/" data-r="">${icon('Home', { size: 17 })}<span>Dashboard</span></a>
+      <a href="#/profil" data-r="profil">${icon('Building2', { size: 17 })}<span>Profil Sekolah</span></a>
       <div class="nav-section">Administrasi</div>
       <a href="#/letters/in" data-r="letters-in">${icon('Inbox', { size: 17 })}<span>Surat Masuk</span></a>
       <a href="#/letters/out" data-r="letters-out">${icon('Send', { size: 17 })}<span>Surat Keluar</span></a>
@@ -68,6 +70,7 @@ function renderShell(app, ws) {
       <a href="#/meetings" data-r="meetings">${icon('Users', { size: 17 })}<span>Rapat</span></a>
       <a href="#/tasks" data-r="tasks">${icon('SquareCheck', { size: 17 })}<span>Tugas</span></a>
       <div class="nav-section">Data</div>
+      <a href="#/ksp" data-r="ksp">${icon('BookOpen', { size: 17 })}<span>E-KSP</span></a>
       <a href="#/staff" data-r="staff">${icon('UserCog', { size: 17 })}<span>Kepegawaian</span></a>
       <a href="#/students" data-r="students">${icon('GraduationCap', { size: 17 })}<span>Siswa</span></a>
       <div class="nav-section">Lainnya</div>
@@ -176,6 +179,12 @@ async function route() {
     } else if (section === 'meetings' || section === 'tasks') {
       const { renderMeetingsTasks } = await import('./pages/meetings-tasks.js');
       cleanup = await renderMeetingsTasks(main, section);
+    } else if (section === 'ksp') {
+      const { renderKsp } = await import('./pages/ksp.js');
+      cleanup = await renderKsp(main);
+    } else if (section === 'profil') {
+      const { renderProfil } = await import('./pages/profil.js');
+      cleanup = await renderProfil(main);
     } else if (section === 'staff') {
       const { renderStaff } = await import('./pages/staff.js');
       cleanup = await renderStaff(main);
@@ -210,12 +219,15 @@ async function route() {
 
 function updateNav(hash) {
   document.querySelectorAll('nav.side a').forEach(a => {
-    a.classList.toggle('active', a.getAttribute('href').slice(1) === '/' + hash || a.getAttribute('href') === '#' + '/' + hash);
+    const base = a.getAttribute('href').slice(1);
+    const active = base === '/' ? hash === ''
+      : (base === '/' + hash || hash.startsWith(base.replace(/^\//, '') + '/'));
+    a.classList.toggle('active', active);
   });
 }
 
 async function renderDashboard(main) {
-  const [lettersIn, lettersOut, tasksOpen, meetings, staffCount, studentsCount, lastBackup] = await Promise.all([
+  const [lettersIn, lettersOut, tasksOpen, meetings, staffCount, studentsCount, lastBackup, kspChecked, kspTotal] = await Promise.all([
     db.letters.where('type').equals('in').count(),
     db.letters.where('type').equals('out').count(),
     db.tasks.where('status').notEqual('done').count(),
@@ -223,6 +235,8 @@ async function renderDashboard(main) {
     db.staff.count(),
     db.students.where('status').equals('Aktif').count(),
     getSetting('last_backup_at'),
+    db.ksp_assessments.where('year').equals(await getSetting('ksp_active_year', currentAcademicYear())).count(),
+    db.ksp_indicators.count(),
   ]);
 
   const nextTasks = await db.tasks.where('status').notEqual('done').sortBy('dueDate');
@@ -249,6 +263,9 @@ async function renderDashboard(main) {
       <div class="stat"><div class="num">${meetings}</div><div class="lbl">Rapat Tercatat</div></div>
       <div class="stat"><div class="num">${staffCount}</div><div class="lbl">Guru & Staf</div></div>
       <div class="stat"><div class="num">${studentsCount}</div><div class="lbl">Siswa Aktif</div></div>
+      <a href="#/ksp" class="stat" style="text-decoration:none;color:inherit">
+        <div class="num">${kspChecked}/${kspTotal}</div><div class="lbl">Progres E-KSP →</div>
+      </a>
     </div>
     <div class="card" style="margin-top:16px">
       <h2>Prioritas Tugas</h2>
@@ -278,7 +295,7 @@ async function renderOnboarding(app) {
         </p>
         <form class="form" id="ws-form">
           <label>Nama Sekolah <input name="name" required placeholder="SD Negeri 1 Contoh"></label>
-          <label>NPSN <input name="npsn" placeholder="12345678"></label>
+          <label>NPSN <input name="npsn" placeholder="00000000"></label>
           <label>Nama Kepala Sekolah <input name="headmaster" placeholder="Nama Anda"></label>
           <label>Alamat <input name="address" placeholder="Alamat sekolah"></label>
           <button class="btn primary" type="submit" style="width:100%;margin-top:8px">Buat Workspace</button>
@@ -289,9 +306,16 @@ async function renderOnboarding(app) {
   app.querySelector('#ws-form').addEventListener('submit', async e => {
     e.preventDefault();
     const fd = new FormData(e.target);
-    const ws = Object.fromEntries(fd.entries());
-    ws.createdAt = Date.now();
-    await setSetting('workspace', ws);
+    const fdData = Object.fromEntries(fd.entries());
+    await saveSchoolProfile({
+      name: fdData.name || '',
+      npsn: fdData.npsn || '',
+      headmaster: fdData.headmaster || '',
+      address: fdData.address || '',
+      alamatLengkap: fdData.address || '',
+      tahun: currentAcademicYear(),
+      createdAt: Date.now(),
+    });
     location.reload();
   });
 }

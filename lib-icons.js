@@ -4,7 +4,7 @@ import {
   MessageSquare, Download, Upload, Check, TriangleAlert, Save, RotateCcw,
   CircleCheck, CircleX, Info, Paperclip,
   UserCog, GraduationCap, FileSpreadsheet,
-  Megaphone, Copy
+  Megaphone, Copy, BookOpen, ClipboardCheck, ShieldCheck, FileText, Search, RefreshCw, ListChecks, Image
 } from 'https://cdn.jsdelivr.net/npm/lucide@0.451.0/+esm';
 
 const REGISTRY = {
@@ -13,7 +13,7 @@ const REGISTRY = {
   MessageSquare, Download, Upload, Check, TriangleAlert, Save, RotateCcw,
   CircleCheck, CircleX, Info, Paperclip,
   UserCog, GraduationCap, FileSpreadsheet,
-  Megaphone, Copy
+  Megaphone, Copy, BookOpen, ClipboardCheck, ShieldCheck, FileText, Search, RefreshCw, ListChecks, Image
 };
 
 /**

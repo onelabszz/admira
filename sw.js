@@ -1,10 +1,11 @@
-const CACHE = 'admira-v21';
+const CACHE = 'admira-v32';
 const ASSETS = [
   './', './index.html', './styles.css',
-  './lib.js', './lib-print.js', './lib-icons.js',
+  './lib.js', './lib-print.js', './lib-ksp-doc.js', './lib-csv-import.js', './lib-icons.js', './lib-rapor.js',
   './lib-toast.js', './lib-confirm.js',
-  './db.js', './templates.js', './app.js',
+  './db.js', './templates.js', './school-profile.js', './ksp-data.js', './ksp-templates.js', './ksp-references.js', './app.js',
   './pages/letters.js', './pages/wa.js', './pages/meetings-tasks.js',
+  './pages/ksp.js', './pages/profil.js',
   './pages/reports.js', './pages/settings.js',
   './pages/staff.js', './pages/students.js',
   './manifest.webmanifest', './icons/icon.svg',
@@ -50,12 +51,29 @@ self.addEventListener('fetch', e => {
     return;
   }
 
+  const url = new URL(req.url);
+
+  // Aset aplikasi: network-first agar perubahan kode langsung terpakai
+  // setelah reload (cukup sekali). Tetap fallback ke cache saat offline.
+  if (url.origin === self.location.origin && /\.(js|css|webmanifest|svg|png|jpg|ico)$/i.test(url.pathname)) {
+    e.respondWith(
+      fetch(req).then(res => {
+        if (res.ok) {
+          const copy = res.clone();
+          caches.open(CACHE).then(c => c.put(req, copy)).catch(() => {});
+        }
+        return res;
+      }).catch(() => caches.match(req))
+    );
+    return;
+  }
+
+  // CDN & lainnya: cache-first seperti sebelumnya.
   e.respondWith(
     caches.match(req).then(hit => {
       if (hit) return hit;
       return fetch(req).then(res => {
         if (res.ok) {
-          // Clone sinkron sebelum return
           const copy = res.clone();
           caches.open(CACHE).then(c => c.put(req, copy)).catch(() => {});
         }
